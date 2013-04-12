@@ -3,7 +3,7 @@ Another PHP mailing script, this time with method chaining
 ----------------------------------------------------------
 Encapsulated utility for sending out emails with PHP. Will separate out plain-text, html, and attachments. Works across several tested email clients, including the picky Microsoft Outlook.
 
-Why Archangel? Well, it's cool (like bow ties), and the technically an 'archangel' is a 'messenger'.
+Why Archangel? Well, it's cool (like bow ties) and technically an 'archangel' is a 'messenger'.
 
 
 Requirements
