@@ -3,7 +3,7 @@ Another PHP mailing script, this time with method chaining
 ----------------------------------------------------------
 Encapsulated utility for sending out emails with PHP. Will separate out plain-text, html, and attachments. Works across several tested email clients, including the picky Microsoft Outlook.
 
-Why Archangel? Well, it's cool (like bow ties), and the technically a 'archangel' is a 'messenger'.
+Why Archangel? Well, it's cool (like bow ties), and the technically an 'archangel' is a 'messenger'.
 
 
 Requirements
@@ -23,16 +23,16 @@ Minimum fields to set are:
 
 Future Enhancements
 ------------------
-CC/BCC
-Multiple attachments
-Inline attachments via CID
-Error handling
-Error triggering
-Validation
-SMTP, mayhaps?
-Encoding options
-SMTP authentication, why not?
-Split up get_message() more elegantly. Because, seriously.
+ - CC/BCC
+ - Multiple attachments
+ - Inline attachments via CID
+ - Error handling
+ - Error triggering
+ - Validation
+ - SMTP, mayhaps?
+ - Encoding options
+ - SMTP authentication, why not?
+ - Split up get_message() more elegantly. Because, seriously.
 
 
 Changelog
