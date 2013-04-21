@@ -26,6 +26,8 @@ final class Archangel
 	 * Holders for some of the more list-y variable handling
 	 */
 	private $to_array = array();
+	private $cc_array = array();
+	private $bcc_array = array();
 	private $header_array = array();
 
 	/**
@@ -57,6 +59,34 @@ final class Archangel
 	public function addTo($address, $title = '')
 	{
 		$this->to_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		
+		return $this;
+	}
+
+	/**
+	 * Setter method for adding cc recipients
+	 *
+	 * @param	string	$address	email address for the cc recipient
+	 * @param	string	$title		name of the cc recipient (optional)
+	 * @return	object	instantiated $this
+	 */
+	public function addCC($address, $title = '')
+	{
+		$this->cc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		
+		return $this;
+	}
+
+	/**
+	 * Setter method for adding bcc recipients
+	 *
+	 * @param	string	$address	email address for the bcc recipient
+	 * @param	string	$title		name of the bcc recipient (optional)
+	 * @return	object	instantiated $this
+	 */
+	public function addBCC($address, $title = '')
+	{
+		$this->bcc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -314,6 +344,11 @@ final class Archangel
 		{
 			$headers .= "{$key}: {$value}" . self::$LINE_BREAK;
 		}
+		
+		if(count($this->cc_array) > 0)
+			$headers .= 'CC: ' . implode(', ', $this->cc_array) . self::$LINE_BREAK;
+		if(count($this->bcc_array) > 0)
+			$headers .= 'BCC: ' . implode(', ', $this->bcc_array) . self::$LINE_BREAK;
 		
 		if(isset($this->attachment) && count($this->attachment) > 0)
 			$headers .= "Content-Type: multipart/mixed; boundary=\"{$this->get_boundary()}\"";
