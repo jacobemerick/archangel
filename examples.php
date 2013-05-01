@@ -19,5 +19,6 @@ $mail_sent = Archangel::instance()
 	->setSubject('Hey I just met you')
 	->setPlainMessage('And this is crazy')
 	->setHTMLMessage("<p>But here's my <b>number</b><br />So call me <b>maybe</b></p>")
-	->setAttachment('screenshot.jpg', 'image/jpeg', 'Screenshot of phone number')
+	->addAttachment('screenshot.jpg', 'image/jpeg', 'some-phone-number.jpg')
+	->addAttachment('logo.png', 'image/png')
 	->send();

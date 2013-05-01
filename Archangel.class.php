@@ -20,7 +20,6 @@ final class Archangel
 	private $reply_to;
 	private $plain_message;
 	private $html_message;
-	private $attachment;
 
 	/**
 	 * Holders for some of the more list-y variable handling
@@ -29,6 +28,7 @@ final class Archangel
 	private $cc_array = array();
 	private $bcc_array = array();
 	private $header_array = array();
+	private $attachment_array = array();
 
 	/**
 	 * Static pieces that really don't need to change
@@ -159,16 +159,16 @@ final class Archangel
 	}
 
 	/**
-	 * Setter method for an attachment
+	 * Setter method for adding attachments
 	 *
 	 * @param	string	$path	the full path of the attachment
 	 * @param	string	$type	mime type of the file
 	 * @param	string	$title	the title of the attachment (optional)
 	 * @return	object	insantiated $this
 	 */
-	public function setAttachment($path, $type, $title = '')
+	public function addAttachment($path, $type, $title = '')
 	{
-		$this->attachment = (object) array(
+		$this->attachment_array[] = (object) array(
 			'path' => $path,
 			'type' => $type,
 			'title' => $title);
@@ -219,7 +219,7 @@ final class Archangel
 			(
 				(isset($this->plain_message) && strlen($this->plain_message) > 0) ||
 				(isset($this->html_message) && strlen($this->html_message) > 0) ||
-				(isset($this->attachment) && count($this->attachment) > 0)));
+				(isset($this->attachment_array) && count($this->attachment_array) > 0)));
 	}
 
 	/**
@@ -241,14 +241,14 @@ final class Archangel
 	{
 		$message = '';
 		
-		if(isset($this->attachment) && count($this->attachment) > 0)
+		if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 			$message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
 		
 		if(
 			isset($this->plain_message) && strlen($this->plain_message) > 0 &&
 			isset($this->html_message) && strlen($this->html_message) > 0)
 		{
-			if(isset($this->attachment) && count($this->attachment) > 0)
+			if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 			{
 				$message .= "Content-Type: multipart/alternative; boundary={$this->get_alternative_boundary()}" . self::$LINE_BREAK;
 				$message .= self::$LINE_BREAK;
@@ -270,7 +270,7 @@ final class Archangel
 		}
 		else if(isset($this->plain_message) && strlen($this->plain_message))
 		{
-			if(isset($this->attachment) && count($this->attachment) > 0)
+			if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 			{
 				$message .= 'Content-Type: text/plain; charset="iso-8859"' . self::$LINE_BREAK;
 				$message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
@@ -281,7 +281,7 @@ final class Archangel
 		}
 		else if(isset($this->html_message) && strlen($this->html_message))
 		{
-			if(isset($this->attachment) && count($this->attachment) > 0)
+			if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 			{
 				$message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::$LINE_BREAK;
 				$message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
@@ -290,15 +290,18 @@ final class Archangel
 			$message .= $this->html_message;
 			$message .= self::$LINE_BREAK;
 		}
-		if(isset($this->attachment) && count($this->attachment) > 0)
+		if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 		{
-			$message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
-			$message .= "Content-Type: {$this->attachment->type}; name=\"{$this->attachment->title}\"" . self::$LINE_BREAK;
-			$message .= 'Content-Transfer-Encoding: base64' . self::$LINE_BREAK;
-			$message .= 'Content-Disposition: attachment' . self::$LINE_BREAK;
-			$message .= self::$LINE_BREAK;
-			$message .= $this->get_attachment_content();
-			$message .= self::$LINE_BREAK;
+			foreach($this->attachment_array as $attachment)
+			{
+				$message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
+				$message .= "Content-Type: {$attachment->type}; name=\"{$attachment->title}\"" . self::$LINE_BREAK;
+				$message .= 'Content-Transfer-Encoding: base64' . self::$LINE_BREAK;
+				$message .= 'Content-Disposition: attachment' . self::$LINE_BREAK;
+				$message .= self::$LINE_BREAK;
+				$message .= $this->get_attachment_content($attachment);
+				$message .= self::$LINE_BREAK;
+			}
 			$message .= "--{$this->get_boundary()}--" . self::$LINE_BREAK;
 		}
 		return $message;
@@ -350,7 +353,7 @@ final class Archangel
 		if(count($this->bcc_array) > 0)
 			$headers .= 'BCC: ' . implode(', ', $this->bcc_array) . self::$LINE_BREAK;
 		
-		if(isset($this->attachment) && count($this->attachment) > 0)
+		if(isset($this->attachment_array) && count($this->attachment_array) > 0)
 			$headers .= "Content-Type: multipart/mixed; boundary=\"{$this->get_boundary()}\"";
 		else if(
 			isset($this->plain_message) && strlen($this->plain_message) > 0 &&
@@ -369,10 +372,10 @@ final class Archangel
 	 *
 	 * @return	string	binary representation of file, base64'd
 	 */
-	private function get_attachment_content()
+	private function get_attachment_content($attachment)
 	{
-		$handle = fopen($this->attachment->path, 'r');
-		$contents = fread($handle, filesize($this->attachment->path));
+		$handle = fopen($attachment->path, 'r');
+		$contents = fread($handle, filesize($attachment->path));
 		fclose($handle);
 		
 		$contents = base64_encode($contents);
