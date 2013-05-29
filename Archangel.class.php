@@ -22,6 +22,12 @@ final class Archangel
 	private $html_message;
 
 	/**
+	 * Holder for error handling and validation
+	 */
+	private $passed_validation = TRUE;
+	private $validation_error = array();
+
+	/**
 	 * Holders for some of the more list-y variable handling
 	 */
 	private $to_array = array();
@@ -58,7 +64,8 @@ final class Archangel
 	 */
 	public function addTo($address, $title = '')
 	{
-		$this->to_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		if($this->is_valid_email_address($address) && $this->is_valid_email_title($title))
+			$this->to_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -72,7 +79,8 @@ final class Archangel
 	 */
 	public function addCC($address, $title = '')
 	{
-		$this->cc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		if($this->is_valid_email_address($address) && $this->is_valid_email_title($title))
+			$this->cc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -86,7 +94,8 @@ final class Archangel
 	 */
 	public function addBCC($address, $title = '')
 	{
-		$this->bcc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		if($this->is_valid_email_address($address) && $this->is_valid_email_title($title))
+			$this->bcc_array[] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -100,7 +109,8 @@ final class Archangel
 	 */
 	public function setFrom($address, $title = '')
 	{
-		$this->header_array['From'] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		if($this->is_valid_email_address($address) && $this->is_valid_email_title($title))
+			$this->header_array['From'] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -114,7 +124,8 @@ final class Archangel
 	 */
 	public function setReplyTo($address, $title = '')
 	{
-		$this->header_array['Reply-To'] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
+		if($this->is_valid_email_address($address) && $this->is_valid_email_title($title))
+			$this->header_array['Reply-To'] = ($title != '') ? "\"{$title}\" <{$address}>" : "{$address}";
 		
 		return $this;
 	}
@@ -127,7 +138,8 @@ final class Archangel
 	 */
 	public function setSubject($subject)
 	{
-		$this->subject = $subject;
+		if($this->is_valid_subject($subject))
+			$this->subject = $subject;
 		
 		return $this;
 	}
@@ -185,6 +197,9 @@ final class Archangel
 	 */
 	public function send()
 	{
+		if($this->passed_validation === FALSE)
+			return false;
+		
 		if(!$this->check_required_fields())
 			return false;
 		
@@ -381,6 +396,52 @@ final class Archangel
 		$contents = base64_encode($contents);
 		$contents = chunk_split($contents);
 		return $contents;
+	}
+
+	/**
+	 * stub for email address checking
+	 */
+	private function is_valid_email_address($string)
+	{
+		if(strlen($string) < 1)
+			return $this->fail_validation("{$string} is an invalid email address!");
+		
+		return true;
+	}
+
+	/**
+	 * stub for email title checking
+	 */
+	private function is_valid_email_title($string)
+	{
+		return true;
+	}
+
+	/**
+	 * stub for subject checking
+	 */
+	private function is_valid_subject($string)
+	{
+		if(strlen($string) < 1)
+			return $this->fail_validation("{$string} is an invalid email subject!");
+		
+		return true;
+	}
+
+	/**
+	 * holder for all validation fails
+	 */
+	private function fail_validation($message)
+	{
+		$this->passed_validation = FALSE;
+		$this->validation_error[] = $message;
+		
+		return false;
+	}
+
+	public function get_validation_errors()
+	{
+		return $this->validation_error();
 	}
 
 }
