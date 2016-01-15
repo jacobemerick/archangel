@@ -1,5 +1,7 @@
 <?php
 
+namespace Jacobemerick\Archangel;
+
 /**
  * This is the main class for Archangel mailer
  * For licensing and examples:
@@ -10,7 +12,7 @@
  * @version 1.0 (2013-04-12)
  */
 
-final class Archangel
+class Archangel
 {
 
 	/**
