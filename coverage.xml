@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1452950020">
-  <project timestamp="1452950020">
+<coverage generated="1452950627">
+  <project timestamp="1452950627">
     <package name="Jacobemerick\Archangel">
       <file name="/Users/jemerick/development/archangel/src/Archangel.php">
         <class name="Archangel" namespace="Jacobemerick\Archangel">
