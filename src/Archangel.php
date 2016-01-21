@@ -9,7 +9,6 @@ namespace Jacobemerick\Archangel;
  *
  * @author jacobemerick (http://home.jacobemerick.com/)
  */
-
 class Archangel
 {
 
@@ -37,23 +36,14 @@ class Archangel
     /** @var array $attachments */
     protected $attachments = array();
 
-    /** @var string MAILER_PATTERN */
-    const MAILER_PATTERN = "PHP/%s";
+    /** @var string $boundary */
+    protected $boundary;
+
+    /** @var string $alternativeBoundary */
+    protected $alternativeBoundary;
 
     /** @var string LINE_BREAK */
     const LINE_BREAK = "\r\n";
-
-    /** @var string BOUNDARY_PATTERN */
-    const BOUNDARY_PATTERN = "PHP-mixed-%s";
-
-    /** @var string BOUNDARY_SALT */
-    const BOUNDARY_SALT = "Boundary Salt";
-
-    /** @var string ALTERNATIVE_BOUNDARY_PATTERN */
-    const ALTERNATIVE_BOUNDARY_PATTERN = "PHP-alternative-%s";
-
-    /** @var string ALTERNATIVE_BOUNDARY_SALT */
-    const ALTERNATIVE_BOUNDARY_SALT = "Alternative Boundary Salt";
 
     /**
      * @param string $mailer
@@ -61,7 +51,7 @@ class Archangel
     public function __construct($mailer = null)
     {
         if (is_null($mailer)) {
-            $mailer = sprintf(self::MAILER_PATTERN, phpversion());
+            $mailer = sprintf('PHP/%s', phpversion());
         }
         $this->headers['X-Mailer'] = $mailer;
     }
@@ -284,7 +274,7 @@ class Archangel
       $message = '';
       
       if(isset($this->attachments) && count($this->attachments) > 0)
-        $message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
+        $message .= "--{$this->getBoundary()}" . self::LINE_BREAK;
       
       if(
         isset($this->plainMessage) && strlen($this->plainMessage) > 0 &&
@@ -292,59 +282,59 @@ class Archangel
       {
         if(isset($this->attachments) && count($this->attachments) > 0)
         {
-          $message .= "Content-Type: multipart/alternative; boundary={$this->get_alternative_boundary()}" . self::$LINE_BREAK;
-          $message .= self::$LINE_BREAK;
+          $message .= "Content-Type: multipart/alternative; boundary={$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+          $message .= self::LINE_BREAK;
         }
-        $message .= "--{$this->get_alternative_boundary()}" . self::$LINE_BREAK;
-        $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::$LINE_BREAK;
-        $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
-        $message .= self::$LINE_BREAK;
+        $message .= "--{$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+        $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
+        $message .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
+        $message .= self::LINE_BREAK;
         $message .= $this->plainMessage;
-        $message .= self::$LINE_BREAK;
-        $message .= "--{$this->get_alternative_boundary()}" . self::$LINE_BREAK;
-        $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::$LINE_BREAK;
-        $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
-        $message .= self::$LINE_BREAK;
+        $message .= self::LINE_BREAK;
+        $message .= "--{$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+        $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
+        $message .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
+        $message .= self::LINE_BREAK;
         $message .= $this->htmlMessage;
-        $message .= self::$LINE_BREAK;
-        $message .= "--{$this->get_alternative_boundary()}--" . self::$LINE_BREAK;
-        $message .= self::$LINE_BREAK;
+        $message .= self::LINE_BREAK;
+        $message .= "--{$this->getAlternativeBoundary()}--" . self::LINE_BREAK;
+        $message .= self::LINE_BREAK;
       }
       else if(isset($this->plainMessage) && strlen($this->plainMessage))
       {
         if(isset($this->attachments) && count($this->attachments) > 0)
         {
-          $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::$LINE_BREAK;
-          $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
-          $message .= self::$LINE_BREAK;
+          $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
+          $message .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
+          $message .= self::LINE_BREAK;
         }
         $message .= $this->plainMessage;
-        $message .= self::$LINE_BREAK;
+        $message .= self::LINE_BREAK;
       }
       else if(isset($this->htmlMessage) && strlen($this->htmlMessage))
       {
         if(isset($this->attachments) && count($this->attachments) > 0)
         {
-          $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::$LINE_BREAK;
-          $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
-          $message .= self::$LINE_BREAK;
+          $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
+          $message .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
+          $message .= self::LINE_BREAK;
         }
         $message .= $this->htmlMessage;
-        $message .= self::$LINE_BREAK;
+        $message .= self::LINE_BREAK;
       }
       if(isset($this->attachments) && count($this->attachments) > 0)
       {
         foreach($this->attachments as $attachment)
         {
-          $message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
-          $message .= "Content-Type: {$attachment->type}; name=\"{$attachment->title}\"" . self::$LINE_BREAK;
-          $message .= 'Content-Transfer-Encoding: base64' . self::$LINE_BREAK;
-          $message .= 'Content-Disposition: attachment' . self::$LINE_BREAK;
-          $message .= self::$LINE_BREAK;
-          $message .= $this->get_attachment_content($attachment);
-          $message .= self::$LINE_BREAK;
+          $message .= "--{$this->getBoundary()}" . self::LINE_BREAK;
+          $message .= "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"" . self::LINE_BREAK;
+          $message .= 'Content-Transfer-Encoding: base64' . self::LINE_BREAK;
+          $message .= 'Content-Disposition: attachment' . self::LINE_BREAK;
+          $message .= self::LINE_BREAK;
+          $message .= $this->buildAttachmentContent($attachment);
+          $message .= self::LINE_BREAK;
         }
-        $message .= "--{$this->get_boundary()}--" . self::$LINE_BREAK;
+        $message .= "--{$this->getBoundary()}--" . self::LINE_BREAK;
       }
       return $message;
     }
@@ -355,26 +345,26 @@ class Archangel
      *
      * @return  string  boundary
      */
-    protected $boundary;
-    protected function get_boundary()
+    protected function getBoundary()
     {
-      if(!isset($this->boundary))
-        $this->boundary = sprintf(self::$BOUNDARY_FORMAT, md5(date('r', time()) . self::$BOUNDARY_SALT));
-      return $this->boundary;
+        if (!isset($this->boundary)) {
+            $this->boundary = sprintf('PHP-mixed-%s', uniqid());
+        }
+        return $this->boundary;
     }
 
     /**
-     * Private holder for the alternative boundry logic
+     * Holder to create the alternative boundry logic
      * Not called/created unless it's needed
      *
-     * @return  string  alternative boundary
+     * @return string alternative boundary
      */
-    protected $alternative_boundary;
-    protected function get_alternative_boundary()
+    protected function getAlternativeBoundary()
     {
-      if(!isset($this->alternative_boundary))
-        $this->alternative_boundary = sprintf(self::$ALTERNATIVE_BOUNDARY_FORMAT, md5(date('r', time()) . self::$ALTERNATIVE_BOUNDARY_SALT));
-      return $this->alternative_boundary;
+        if (!isset($this->alternativeBoundary)) {
+            $this->alternativeBoundary = sprintf('PHP-alternative-%s', uniqid());
+        }
+        return $this->alternativeBoundary;
     }
 
     /**
@@ -387,21 +377,21 @@ class Archangel
       $headers = '';
       foreach($this->headers as $key => $value)
       {
-        $headers .= "{$key}: {$value}" . self::$LINE_BREAK;
+        $headers .= "{$key}: {$value}" . self::LINE_BREAK;
       }
       
       if(count($this->cc) > 0)
-        $headers .= 'CC: ' . implode(', ', $this->cc) . self::$LINE_BREAK;
+        $headers .= 'CC: ' . implode(', ', $this->cc) . self::LINE_BREAK;
       if(count($this->bcc) > 0)
-        $headers .= 'BCC: ' . implode(', ', $this->bcc) . self::$LINE_BREAK;
+        $headers .= 'BCC: ' . implode(', ', $this->bcc) . self::LINE_BREAK;
       
       if(isset($this->attachments) && count($this->attachments) > 0)
-        $headers .= "Content-Type: multipart/mixed; boundary=\"{$this->get_boundary()}\"";
+        $headers .= "Content-Type: multipart/mixed; boundary=\"{$this->getBoundary()}\"";
       else if(
         isset($this->plainMessage) && strlen($this->plainMessage) > 0 &&
         isset($this->htmlMessage) && strlen($this->htmlMessage) > 0)
       {
-        $headers .= "Content-Type: multipart/alternative; boundary=\"{$this->get_alternative_boundary()}\"";
+        $headers .= "Content-Type: multipart/alternative; boundary=\"{$this->getAlternativeBoundary()}\"";
       }
       else if(isset($this->htmlMessage) && strlen($this->htmlMessage) > 0)
         $headers .= 'Content-type: text/html; charset="iso-8859-1"';
@@ -412,16 +402,20 @@ class Archangel
     /**
      * File reader for attachments
      *
-     * @return  string  binary representation of file, base64'd
+     * @return string binary representation of file, base64'd
      */
-    protected function get_attachment_content($attachment)
+    protected function buildAttachmentContent($attachment)
     {
-      $handle = fopen($attachment->path, 'r');
-      $contents = fread($handle, filesize($attachment->path));
-      fclose($handle);
-      
-      $contents = base64_encode($contents);
-      $contents = chunk_split($contents);
-      return $contents;
+        if (!file_exists($attachment['path'])) {
+            return ''; // todo log error
+        }
+
+        $handle = fopen($attachment['path'], 'r');
+        $contents = fread($handle, filesize($attachment['path']));
+        fclose($handle);
+
+        $contents = base64_encode($contents);
+        $contents = chunk_split($contents);
+        return $contents;
     }
 }
