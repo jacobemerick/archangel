@@ -87,8 +87,8 @@ class Archangel
     /**
      * Setter method for adding cc recipients
      *
-     * @param string $address  email address for the cc recipient
-     * @param string $title    name of the cc recipient (optional)
+     * @param string $address email address for the cc recipient
+     * @param string $title   name of the cc recipient (optional)
      *
      * @return object instantiated $this
      */
@@ -105,7 +105,7 @@ class Archangel
     /**
      * Setter method for adding bcc recipients
      *
-     * @param string $addres  email address for the bcc recipient
+     * @param string $address email address for the bcc recipient
      * @param string $title   name of the bcc recipient (optional)
      *
      * @return object instantiated $this
@@ -227,73 +227,70 @@ class Archangel
      */
     public function send()
     {
-      if($this->passed_validation === FALSE)
-        return false;
-      
-      if(!$this->check_required_fields())
-        return false;
-      
-      $to = $this->get_to();
-      $subject = $this->subject;
-      $message = $this->get_message();
-      $additional_headers = $this->get_additional_headers();
-      
-      return mail($to, $subject, $message, $additional_headers);
+        if (!$this->checkRequiredFields()) {
+            return false;
+        }
+
+        $to = $this->buildTo();
+        $subject = $this->subject;
+        $message = $this->buildMessage();
+        $headers = $this->buildHeaders();
+
+        return mail($to, $subject, $message, $headers);
     }
 
     /**
-     * Main instantiator for the class
+     * Call to check the minimum required fields
      *
-     * @return  object  instantiated $this
+     * @return boolean whether or not the email meets the minimum required fields
      */
-    public static function instance()
+    protected function checkRequiredFields()
     {
-      return new Archangel();
+        if (empty($this->to)) {
+            return false;
+        }
+        if (empty($this->subject)) {
+            return false;
+        }
+
+        if (
+            empty($this->plainMessage) &&
+            empty($this->htmlMessage) &&
+            empty($this->attachments)
+        ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * Private call to check the minimum required fields
+     * Build the recipients from 'to'
      *
-     * @return  boolean whether or not the email meets the minimum required fields
+     * @return string comma-separated lit of recipients
      */
-    private function check_required_fields()
+    protected function buildTo()
     {
-      return (
-        count($this->to_array) > 0 &&
-        (isset($this->subject) && strlen($this->subject) > 0) &&
-        (
-          (isset($this->plain_message) && strlen($this->plain_message) > 0) ||
-          (isset($this->html_message) && strlen($this->html_message) > 0) ||
-          (isset($this->attachment_array) && count($this->attachment_array) > 0)));
-    }
-
-    /**
-     * Private function to collect the recipients from to_array
-     *
-     * @return  string  comma-separated lit of recipients
-     */
-    private function get_to()
-    {
-      return implode(', ', $this->to_array);
+       return implode(', ', $this->to);
     }
 
     /**
      * Long, nasty creater of the actual message, with all the multipart logic you'd never want to see
      *
-     * @return  string  email message
+     * @return string email message
      */
-    private function get_message()
+    protected function buildMessage()
     {
       $message = '';
       
-      if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+      if(isset($this->attachments) && count($this->attachments) > 0)
         $message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
       
       if(
-        isset($this->plain_message) && strlen($this->plain_message) > 0 &&
-        isset($this->html_message) && strlen($this->html_message) > 0)
+        isset($this->plainMessage) && strlen($this->plainMessage) > 0 &&
+        isset($this->htmlMessage) && strlen($this->htmlMessage) > 0)
       {
-        if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+        if(isset($this->attachments) && count($this->attachments) > 0)
         {
           $message .= "Content-Type: multipart/alternative; boundary={$this->get_alternative_boundary()}" . self::$LINE_BREAK;
           $message .= self::$LINE_BREAK;
@@ -302,42 +299,42 @@ class Archangel
         $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::$LINE_BREAK;
         $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
         $message .= self::$LINE_BREAK;
-        $message .= $this->plain_message;
+        $message .= $this->plainMessage;
         $message .= self::$LINE_BREAK;
         $message .= "--{$this->get_alternative_boundary()}" . self::$LINE_BREAK;
         $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::$LINE_BREAK;
         $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
         $message .= self::$LINE_BREAK;
-        $message .= $this->html_message;
+        $message .= $this->htmlMessage;
         $message .= self::$LINE_BREAK;
         $message .= "--{$this->get_alternative_boundary()}--" . self::$LINE_BREAK;
         $message .= self::$LINE_BREAK;
       }
-      else if(isset($this->plain_message) && strlen($this->plain_message))
+      else if(isset($this->plainMessage) && strlen($this->plainMessage))
       {
-        if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+        if(isset($this->attachments) && count($this->attachments) > 0)
         {
           $message .= 'Content-Type: text/plain; charset="iso-8859"' . self::$LINE_BREAK;
           $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
           $message .= self::$LINE_BREAK;
         }
-        $message .= $this->plain_message;
+        $message .= $this->plainMessage;
         $message .= self::$LINE_BREAK;
       }
-      else if(isset($this->html_message) && strlen($this->html_message))
+      else if(isset($this->htmlMessage) && strlen($this->htmlMessage))
       {
-        if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+        if(isset($this->attachments) && count($this->attachments) > 0)
         {
           $message .= 'Content-Type: text/html; charset="iso-8859-1"' . self::$LINE_BREAK;
           $message .= 'Content-Transfer-Encoding: 7bit' . self::$LINE_BREAK;
           $message .= self::$LINE_BREAK;
         }
-        $message .= $this->html_message;
+        $message .= $this->htmlMessage;
         $message .= self::$LINE_BREAK;
       }
-      if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+      if(isset($this->attachments) && count($this->attachments) > 0)
       {
-        foreach($this->attachment_array as $attachment)
+        foreach($this->attachments as $attachment)
         {
           $message .= "--{$this->get_boundary()}" . self::$LINE_BREAK;
           $message .= "Content-Type: {$attachment->type}; name=\"{$attachment->title}\"" . self::$LINE_BREAK;
@@ -358,8 +355,8 @@ class Archangel
      *
      * @return  string  boundary
      */
-    private $boundary;
-    private function get_boundary()
+    protected $boundary;
+    protected function get_boundary()
     {
       if(!isset($this->boundary))
         $this->boundary = sprintf(self::$BOUNDARY_FORMAT, md5(date('r', time()) . self::$BOUNDARY_SALT));
@@ -372,8 +369,8 @@ class Archangel
      *
      * @return  string  alternative boundary
      */
-    private $alternative_boundary;
-    private function get_alternative_boundary()
+    protected $alternative_boundary;
+    protected function get_alternative_boundary()
     {
       if(!isset($this->alternative_boundary))
         $this->alternative_boundary = sprintf(self::$ALTERNATIVE_BOUNDARY_FORMAT, md5(date('r', time()) . self::$ALTERNATIVE_BOUNDARY_SALT));
@@ -385,28 +382,28 @@ class Archangel
      *
      * @return  string  headers needed for multipart
      */
-    private function get_additional_headers()
+    protected function buildHeaders()
     {
       $headers = '';
-      foreach($this->header_array as $key => $value)
+      foreach($this->headers as $key => $value)
       {
         $headers .= "{$key}: {$value}" . self::$LINE_BREAK;
       }
       
-      if(count($this->cc_array) > 0)
-        $headers .= 'CC: ' . implode(', ', $this->cc_array) . self::$LINE_BREAK;
-      if(count($this->bcc_array) > 0)
-        $headers .= 'BCC: ' . implode(', ', $this->bcc_array) . self::$LINE_BREAK;
+      if(count($this->cc) > 0)
+        $headers .= 'CC: ' . implode(', ', $this->cc) . self::$LINE_BREAK;
+      if(count($this->bcc) > 0)
+        $headers .= 'BCC: ' . implode(', ', $this->bcc) . self::$LINE_BREAK;
       
-      if(isset($this->attachment_array) && count($this->attachment_array) > 0)
+      if(isset($this->attachments) && count($this->attachments) > 0)
         $headers .= "Content-Type: multipart/mixed; boundary=\"{$this->get_boundary()}\"";
       else if(
-        isset($this->plain_message) && strlen($this->plain_message) > 0 &&
-        isset($this->html_message) && strlen($this->html_message) > 0)
+        isset($this->plainMessage) && strlen($this->plainMessage) > 0 &&
+        isset($this->htmlMessage) && strlen($this->htmlMessage) > 0)
       {
         $headers .= "Content-Type: multipart/alternative; boundary=\"{$this->get_alternative_boundary()}\"";
       }
-      else if(isset($this->html_message) && strlen($this->html_message) > 0)
+      else if(isset($this->htmlMessage) && strlen($this->htmlMessage) > 0)
         $headers .= 'Content-type: text/html; charset="iso-8859-1"';
       
       return $headers;
@@ -417,7 +414,7 @@ class Archangel
      *
      * @return  string  binary representation of file, base64'd
      */
-    private function get_attachment_content($attachment)
+    protected function get_attachment_content($attachment)
     {
       $handle = fopen($attachment->path, 'r');
       $contents = fread($handle, filesize($attachment->path));
