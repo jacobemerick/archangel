@@ -15,14 +15,14 @@ class Archangel
     /** @var string $subject */
     protected $subject;
 
-    /** @var array $to */
-    protected $to = array();
+    /** @var array $toAddresses */
+    protected $toAddresses = array();
 
-    /** @var array $cc */
-    protected $cc = array();
+    /** @var array $ccAddresses */
+    protected $ccAddresses = array();
 
-    /** @var array $bcc */
-    protected $bcc = array();
+    /** @var array $bccAddresses */
+    protected $bccAddresses = array();
 
     /** @var array $headers */
     protected $headers = array();
@@ -69,7 +69,7 @@ class Archangel
         if (!empty($title)) {
             $address = sprintf('"%s" <%s>', $title, $address);
         }
-        array_push($this->to, $address);
+        array_push($this->toAddresses, $address);
 
         return $this;
     }
@@ -87,7 +87,7 @@ class Archangel
         if (!empty($title)) {
             $address = sprintf('"%s" <%s>', $title, $address);
         }
-        array_push($this->cc, $address);
+        array_push($this->ccAddresses, $address);
 
         return $this;
     }
@@ -105,7 +105,7 @@ class Archangel
         if (!empty($title)) {
             $address = sprintf('"%s" <%s>', $title, $address);
         }
-        array_push($this->bcc, $address);
+        array_push($this->bccAddresses, $address);
 
         return $this;
     }
@@ -221,12 +221,12 @@ class Archangel
             return false;
         }
 
-        $to = $this->buildTo();
+        $recipients = $this->buildTo();
         $subject = $this->subject;
         $message = $this->buildMessage();
         $headers = $this->buildHeaders();
 
-        return mail($to, $subject, $message, $headers);
+        return mail($recipients, $subject, $message, $headers);
     }
 
     /**
@@ -236,18 +236,14 @@ class Archangel
      */
     protected function checkRequiredFields()
     {
-        if (empty($this->to)) {
+        if (empty($this->toAddresses)) {
             return false;
         }
         if (empty($this->subject)) {
             return false;
         }
 
-        if (
-            empty($this->plainMessage) &&
-            empty($this->htmlMessage) &&
-            empty($this->attachments)
-        ) {
+        if (empty($this->plainMessage) && empty($this->htmlMessage) && empty($this->attachments)) {
             return false;
         }
 
@@ -261,7 +257,7 @@ class Archangel
      */
     protected function buildTo()
     {
-       return implode(', ', $this->to);
+        return implode(', ', $this->toAddresses);
     }
 
     /**
@@ -295,7 +291,7 @@ class Archangel
             $messageString .= self::LINE_BREAK;
             $messageString .= "--{$this->getAlternativeBoundary()}--" . self::LINE_BREAK;
             $messageString .= self::LINE_BREAK;
-        } else if (!empty($this->plainMessage)) {
+        } elseif (!empty($this->plainMessage)) {
             if (!empty($this->attachments)) {
                 $messageString .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
                 $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
@@ -303,7 +299,7 @@ class Archangel
             }
             $messageString .= $this->plainMessage;
             $messageString .= self::LINE_BREAK;
-        } else if (!empty($this->htmlMessage)) {
+        } elseif (!empty($this->htmlMessage)) {
             if (!empty($this->attachments)) {
                 $messageString .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
                 $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
@@ -340,18 +336,18 @@ class Archangel
             $headerString .= sprintf('%s: %s', $key, $value) . self::LINE_BREAK;
         }
 
-        if (!empty($this->cc)) {
-            $headerString .= 'CC: ' . implode(', ', $this->cc) . self::LINE_BREAK;
+        if (!empty($this->ccAddresses)) {
+            $headerString .= 'CC: ' . implode(', ', $this->ccAddresses) . self::LINE_BREAK;
         }
-        if (!empty($this->bcc)) {
-            $headerString .= 'BCC: ' . implode(', ', $this->bcc) . self::LINE_BREAK;
+        if (!empty($this->bccAddresses)) {
+            $headerString .= 'BCC: ' . implode(', ', $this->bccAddresses) . self::LINE_BREAK;
         }
         
         if (!empty($this->attachments)) {
             $headerString .= "Content-Type: multipart/mixed; boundary=\"{$this->getBoundary()}\"";
-        } else if (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
+        } elseif (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
             $headerString .= "Content-Type: multipart/alternative; boundary=\"{$this->getAlternativeBoundary()}\"";
-        } else if (!empty($this->htmlMessage)) {
+        } elseif (!empty($this->htmlMessage)) {
             $headerString .= 'Content-type: text/html; charset="iso-8859-1"';
         }
 
