@@ -30,4 +30,30 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
         $this->assertAttributeEquals($headers, 'headers', $archangel);
     }
+
+    public function testAddTo()
+    {
+        $archangel = new Archangel();
+        $archangel->addTo('test@example.com');
+
+        $this->assertAttributeContains('test@example.com', 'toAddresses', $archangel);
+    }
+
+    public function testAddToMultiple()
+    {
+        $archangel = new Archangel();
+        $archangel->addTo('testOne@example.com');
+        $archangel->addTo('testTwo@example.com');
+
+        $this->assertAttributeContains('testOne@example.com', 'toAddresses', $archangel);
+        $this->assertAttributeContains('testTwo@example.com', 'toAddresses', $archangel);
+    }
+
+    public function testAddToWithTitle()
+    {
+        $archangel = new Archangel();
+        $archangel->addTo('test@example.com', 'Mr. Test Alot');
+
+        $this->assertAttributeContains('"Mr. Test Alot" <test@example.com>', 'toAddresses', $archangel);
+    }
 }
