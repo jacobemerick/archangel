@@ -2,6 +2,10 @@
 
 namespace Jacobemerick\Archangel;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
 /**
  * This is the main class for Archangel mailer
  * For licensing and examples:
@@ -9,7 +13,7 @@ namespace Jacobemerick\Archangel;
  *
  * @author jacobemerick (http://home.jacobemerick.com/)
  */
-class Archangel
+class Archangel implements LoggerAwareInterface
 {
 
     /** @var string $subject */
@@ -42,6 +46,9 @@ class Archangel
     /** @var string $alternativeBoundary */
     protected $alternativeBoundary;
 
+    /** @var LoggerInterface */
+    protected $logger;
+
     /** @var string LINE_BREAK */
     const LINE_BREAK = "\r\n";
 
@@ -54,6 +61,20 @@ class Archangel
             $mailer = sprintf('PHP/%s', phpversion());
         }
         $this->headers['X-Mailer'] = $mailer;
+
+        $this->logger = new NullLogger();
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     *
+     * @return $this;
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+
+        return $this;
     }
 
     /**

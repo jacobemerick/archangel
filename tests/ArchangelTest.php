@@ -14,6 +14,13 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Jacobemerick\Archangel\Archangel', $archangel);
     }
 
+    public function testIsLoggerAwareInterface()
+    {
+        $archangel = new Archangel();
+
+        $this->assertInstanceOf('Psr\Log\LoggerAwareInterface', $archangel);
+    }
+
     public function testConstructSetsDefaultMailer()
     {
         $archangel = new Archangel();
@@ -29,6 +36,22 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $headers = array('X-Mailer' => 'AwesomeMailer');
 
         $this->assertAttributeEquals($headers, 'headers', $archangel);
+    }
+
+    public function testConstructSetsNullLogger()
+    {
+        $archangel = new Archangel();
+
+        $this->assertAttributeInstanceOf('Psr\Log\NullLogger', 'logger', $archangel);
+    }
+
+    public function testSetLogger()
+    {
+        $logger = $this->getMock('Psr\Log\LoggerInterface');
+        $archangel = new Archangel();
+        $archangel->setLogger($logger);
+
+        $this->assertAttributeSame($logger, 'logger', $archangel);
     }
 
     public function testAddTo()
