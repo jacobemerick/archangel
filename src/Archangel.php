@@ -87,10 +87,10 @@ class Archangel implements LoggerAwareInterface
      */
     public function addTo($address, $title = '')
     {
-        if (!empty($title)) {
-            $address = sprintf('"%s" <%s>', $title, $address);
-        }
-        array_push($this->toAddresses, $address);
+        array_push(
+            $this->toAddresses,
+            $this->formatEmailAddress($address, $title)
+        );
 
         return $this;
     }
@@ -105,10 +105,10 @@ class Archangel implements LoggerAwareInterface
      */
     public function addCC($address, $title = '')
     {
-        if (!empty($title)) {
-            $address = sprintf('"%s" <%s>', $title, $address);
-        }
-        array_push($this->ccAddresses, $address);
+        array_push(
+            $this->ccAddresses,
+            $this->formatEmailAddress($address, $title)
+        );
 
         return $this;
     }
@@ -123,10 +123,10 @@ class Archangel implements LoggerAwareInterface
      */
     public function addBCC($address, $title = '')
     {
-        if (!empty($title)) {
-            $address = sprintf('"%s" <%s>', $title, $address);
-        }
-        array_push($this->bccAddresses, $address);
+        array_push(
+            $this->bccAddresses,
+            $this->formatEmailAddress($address, $title)
+        );
 
         return $this;
     }
@@ -141,10 +141,7 @@ class Archangel implements LoggerAwareInterface
      */
     public function setFrom($address, $title = '')
     {
-        if (!empty($title)) {
-            $address = sprintf('"%s" <%s>', $title, $address);
-        }
-        $this->headers['From'] = $address;
+        $this->headers['From'] = $this->formatEmailAddress($address, $title);
 
         return $this;
     }
@@ -159,12 +156,23 @@ class Archangel implements LoggerAwareInterface
      */
     public function setReplyTo($address, $title = '')
     {
+        $this->headers['Reply-To'] = $this->formatEmailAddress($address, $title);
+
+        return $this;
+    }
+
+    /**
+     * @param string $address
+     * @param string $title
+     *
+     * @return string
+     */
+    protected function formatEmailAddress($address, $title)
+    {
         if (!empty($title)) {
             $address = sprintf('"%s" <%s>', $title, $address);
         }
-        $this->headers['Reply-To'] = $address;
-
-        return $this;
+        return $address;
     }
 
     /**

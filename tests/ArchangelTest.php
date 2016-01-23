@@ -137,7 +137,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
     {
         $archangel = new Archangel();
         $archangel->setFrom('test@example.com');
-        $setHeaders = $this->getProtectedProperty($archangel, 'headers');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
 
         $this->assertArraySubset(array('From' => 'test@example.com'), $setHeaders);
     }
@@ -147,7 +147,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $archangel = new Archangel();
         $archangel->setFrom('testOne@example.com');
         $archangel->setFrom('testTwo@example.com');
-        $setHeaders = $this->getProtectedProperty($archangel, 'headers');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
 
         $this->assertArraySubset(array('From' => 'testTwo@example.com'), $setHeaders);
         $this->assertNotContains('testOne@example.com', $setHeaders);
@@ -157,17 +157,44 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
     {
         $archangel = new Archangel();
         $archangel->setFrom('test@example.com', 'Mr. Test Alot');
-        $setHeaders = $this->getProtectedProperty($archangel, 'headers');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
 
         $this->assertArraySubset(array('From' => '"Mr. Test Alot" <test@example.com>'), $setHeaders);
     }
 
-    protected function getProtectedProperty($archangel, $property)
+    public function testFormatEmailAddress()
+    {
+        $archangel = new Archangel();
+        $formatMethod = $this->getProtectedMethod('formatEmailAddress');
+        $formattedEmail = $formatMethod->invokeArgs($archangel, array('test@example.com', ''));
+
+        $this->assertEquals('test@example.com', $formattedEmail);
+    }
+
+    public function testFormatEmailAddressWithTitle()
+    {
+        $archangel = new Archangel();
+        $formatMethod = $this->getProtectedMethod('formatEmailAddress');
+        $formattedEmail = $formatMethod->invokeArgs($archangel, array('test@example.com', 'Mr. Test Alot'));
+
+        $this->assertEquals('"Mr. Test Alot" <test@example.com>', $formattedEmail);
+    }
+
+    protected function getProtectedValue($archangel, $property)
     {
         $reflectedArchangel = new ReflectionClass($archangel);
         $reflectedProperty = $reflectedArchangel->getProperty($property);
         $reflectedProperty->setAccessible(true);
 
         return $reflectedProperty->getValue($archangel);
+    }
+
+    protected function getProtectedMethod($method)
+    {
+        $reflectedArchangel = new ReflectionClass('Jacobemerick\Archangel\Archangel');
+        $reflectedMethod = $reflectedArchangel->getMethod($method);
+        $reflectedMethod->setAccessible(true);
+
+        return $reflectedMethod;
     }
 }
