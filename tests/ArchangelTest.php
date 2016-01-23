@@ -162,6 +162,62 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertArraySubset(array('From' => '"Mr. Test Alot" <test@example.com>'), $setHeaders);
     }
 
+    public function testSetReplyTo()
+    {
+        $archangel = new Archangel();
+        $archangel->setReplyTo('test@example.com');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+
+        $this->assertArraySubset(array('Reply-To' => 'test@example.com'), $setHeaders);
+    }
+
+    public function testSetReplyToMultiple()
+    {
+        $archangel = new Archangel();
+        $archangel->setReplyTo('testOne@example.com');
+        $archangel->setReplyTo('testTwo@example.com');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+
+        $this->assertArraySubset(array('Reply-To' => 'testTwo@example.com'), $setHeaders);
+        $this->assertNotContains('testOne@example.com', $setHeaders);
+    }
+
+    public function testSetReplyToWithTitle()
+    {
+        $archangel = new Archangel();
+        $archangel->setReplyTo('test@example.com', 'Mr. Test Alot');
+        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+
+        $this->assertArraySubset(array('Reply-To' => '"Mr. Test Alot" <test@example.com>'), $setHeaders);
+    }
+
+    public function testSetSubject()
+    {
+        $archangel = new Archangel();
+        $archangel->setSubject('Test Subject');
+        $setSubject = $this->getProtectedValue($archangel, 'subject');
+
+        $this->assertEquals('Test Subject', $setSubject);
+    }
+
+    public function testSetPlainMessage()
+    {
+        $archangel = new Archangel();
+        $archangel->setPlainMessage('Plain text message');
+        $setPlainMessage = $this->getProtectedValue($archangel, 'plainMessage');
+
+        $this->assertEquals('Plain text message', $setPlainMessage);
+    }
+
+    public function testSetHTMLMessage()
+    {
+        $archangel = new Archangel();
+        $archangel->setHTMLMessage('<p>An HTML message.</p>');
+        $setHTMLMessage = $this->getProtectedValue($archangel, 'htmlMessage');
+
+        $this->assertEquals('<p>An HTML message.</p>', $setHTMLMessage);
+    }
+
     public function testFormatEmailAddress()
     {
         $archangel = new Archangel();
