@@ -137,9 +137,10 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
     {
         $archangel = new Archangel();
         $archangel->setFrom('test@example.com');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('From' => 'test@example.com'), $setHeaders);
+        $this->assertArraySubset(array('From' => 'test@example.com'), $headers);
     }
 
     public function testSetFromMultiple()
@@ -147,28 +148,31 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $archangel = new Archangel();
         $archangel->setFrom('testOne@example.com');
         $archangel->setFrom('testTwo@example.com');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('From' => 'testTwo@example.com'), $setHeaders);
-        $this->assertNotContains('testOne@example.com', $setHeaders);
+        $this->assertArraySubset(array('From' => 'testTwo@example.com'), $headers);
+        $this->assertNotContains('testOne@example.com', $headers);
     }
 
     public function testSetFromWithTitle()
     {
         $archangel = new Archangel();
         $archangel->setFrom('test@example.com', 'Mr. Test Alot');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('From' => '"Mr. Test Alot" <test@example.com>'), $setHeaders);
+        $this->assertArraySubset(array('From' => '"Mr. Test Alot" <test@example.com>'), $headers);
     }
 
     public function testSetReplyTo()
     {
         $archangel = new Archangel();
         $archangel->setReplyTo('test@example.com');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('Reply-To' => 'test@example.com'), $setHeaders);
+        $this->assertArraySubset(array('Reply-To' => 'test@example.com'), $headers);
     }
 
     public function testSetReplyToMultiple()
@@ -176,46 +180,45 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $archangel = new Archangel();
         $archangel->setReplyTo('testOne@example.com');
         $archangel->setReplyTo('testTwo@example.com');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('Reply-To' => 'testTwo@example.com'), $setHeaders);
-        $this->assertNotContains('testOne@example.com', $setHeaders);
+        $this->assertArraySubset(array('Reply-To' => 'testTwo@example.com'), $headers);
+        $this->assertNotContains('testOne@example.com', $headers);
     }
 
     public function testSetReplyToWithTitle()
     {
         $archangel = new Archangel();
         $archangel->setReplyTo('test@example.com', 'Mr. Test Alot');
-        $setHeaders = $this->getProtectedValue($archangel, 'headers');
+        $headersProperty = $this->getProtectedProperty($archangel, 'headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertArraySubset(array('Reply-To' => '"Mr. Test Alot" <test@example.com>'), $setHeaders);
+        $this->assertArraySubset(array('Reply-To' => '"Mr. Test Alot" <test@example.com>'), $headers);
     }
 
     public function testSetSubject()
     {
         $archangel = new Archangel();
         $archangel->setSubject('Test Subject');
-        $setSubject = $this->getProtectedValue($archangel, 'subject');
 
-        $this->assertEquals('Test Subject', $setSubject);
+        $this->assertAttributeEquals('Test Subject', 'subject', $archangel);
     }
 
     public function testSetPlainMessage()
     {
         $archangel = new Archangel();
         $archangel->setPlainMessage('Plain text message');
-        $setPlainMessage = $this->getProtectedValue($archangel, 'plainMessage');
 
-        $this->assertEquals('Plain text message', $setPlainMessage);
+        $this->assertAttributeEquals('Plain text message', 'plainMessage', $archangel);
     }
 
     public function testSetHTMLMessage()
     {
         $archangel = new Archangel();
         $archangel->setHTMLMessage('<p>An HTML message.</p>');
-        $setHTMLMessage = $this->getProtectedValue($archangel, 'htmlMessage');
 
-        $this->assertEquals('<p>An HTML message.</p>', $setHTMLMessage);
+        $this->assertAttributeEquals('<p>An HTML message.</p>', 'htmlMessage', $archangel);
     }
 
     public function testFormatEmailAddress()
@@ -298,13 +301,13 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expectedBoundary, $boundary);
     }
 
-    protected function getProtectedValue($archangel, $property)
+    protected function getProtectedProperty($archangel, $property)
     {
         $reflectedArchangel = new ReflectionClass($archangel);
         $reflectedProperty = $reflectedArchangel->getProperty($property);
         $reflectedProperty->setAccessible(true);
 
-        return $reflectedProperty->getValue($archangel);
+        return $reflectedProperty;
     }
 
     protected function getProtectedMethod($method)
