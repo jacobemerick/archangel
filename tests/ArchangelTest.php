@@ -281,6 +281,24 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    public function testSend()
+    {
+        $archangel = new Archangel();
+        $archangel->addTo('test@example.com');
+        $archangel->setSubject('Test Subject');
+        $archangel->setPlainMessage('Plain text message');
+        $response = $archangel->send();
+
+        $expectedResponse = array(
+            'to' => 'test@example.com',
+            'subject' => 'Test Subject',
+            'message' => 'Plain text message' . Archangel::LINE_BREAK,
+            'headers' => 'X-Mailer: PHP/6.0.0' . Archangel::LINE_BREAK,
+        );
+
+        $this->assertEquals($expectedResponse, $response);
+    }
+
     /**
      * @dataProvider dataCheckRequiredFields
      */
@@ -409,6 +427,28 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
                 ),
             ),
        );
+    }
+
+    public function testBuildTo()
+    {
+        $archangel = new Archangel();
+        $addressesProperty = $this->getProtectedProperty('toAddresses');
+        $addressesProperty->setValue($archangel, array('test@example.com'));
+        $buildMethod = $this->getProtectedMethod('buildTo');
+        $toAddresses = $buildMethod->invoke($archangel);
+
+        $this->assertEquals('test@example.com', $toAddresses);
+    }
+
+    public function testBuildToMultiple()
+    {
+        $archangel = new Archangel();
+        $addressesProperty = $this->getProtectedProperty('toAddresses');
+        $addressesProperty->setValue($archangel, array('testOne@example.com', 'testTwo@example.com'));
+        $buildMethod = $this->getProtectedMethod('buildTo');
+        $toAddresses = $buildMethod->invoke($archangel);
+
+        $this->assertEquals('testOne@example.com, testTwo@example.com', $toAddresses);
     }
 
     public function testGetBoundary()
