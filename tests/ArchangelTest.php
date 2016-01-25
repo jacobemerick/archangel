@@ -236,6 +236,68 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('"Mr. Test Alot" <test@example.com>', $formattedEmail);
     }
 
+    public function testAddAttachment()
+    {
+        $archangel = new Archangel();
+        $archangel->addAttachment('path', 'type');
+
+        $this->assertAttributeContains(
+            array('path' => 'path', 'type' => 'type', 'title' => ''),
+            'attachments',
+            $archangel
+        );
+    }
+
+    public function testAddAttachmentMultiple()
+    {
+        $archangel = new Archangel();
+        $archangel->addAttachment('pathOne', 'typeOne');
+        $archangel->addAttachment('pathTwo', 'typeTwo');
+
+        $this->assertAttributeContains(
+            array('path' => 'pathOne', 'type' => 'typeOne', 'title' => ''),
+            'attachments',
+            $archangel
+        );
+        $this->assertAttributeContains(
+            array('path' => 'pathTwo', 'type' => 'typeTwo', 'title' => ''),
+            'attachments',
+            $archangel
+        );
+    }
+
+    public function testAddAttachmentWithTitle()
+    {
+        $archangel = new Archangel();
+        $archangel->addAttachment('path', 'type', 'title');
+
+        $this->assertAttributeContains(
+            array('path' => 'path', 'type' => 'type', 'title' => 'title'),
+            'attachments',
+            $archangel
+        );
+    }
+
+    public function testGetBoundary()
+    {
+        $archangel = new Archangel();
+        $boundaryMethod = $this->getProtectedMethod('getBoundary');
+        $boundary = $boundaryMethod->invoke($archangel);
+        $expectedBoundary = sprintf('PHP-mixed-%s', uniqid());
+
+        $this->assertEquals($expectedBoundary, $boundary);
+    }
+
+    public function testGetAlternativeBoundary()
+    {
+        $archangel = new Archangel();
+        $boundaryMethod = $this->getProtectedMethod('getAlternativeBoundary');
+        $boundary = $boundaryMethod->invoke($archangel);
+        $expectedBoundary = sprintf('PHP-alternative-%s', uniqid());
+
+        $this->assertEquals($expectedBoundary, $boundary);
+    }
+
     protected function getProtectedValue($archangel, $property)
     {
         $reflectedArchangel = new ReflectionClass($archangel);
