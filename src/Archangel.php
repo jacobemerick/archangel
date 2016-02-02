@@ -40,11 +40,11 @@ class Archangel implements LoggerAwareInterface
     /** @var array $attachments */
     protected $attachments = array();
 
-    /** @var string $boundary */
-    protected $boundary;
+    /** @var string $boundaryMixed */
+    protected $boundaryMixed;
 
-    /** @var string $alternativeBoundary */
-    protected $alternativeBoundary;
+    /** @var string $boundaryAlternative */
+    protected $boundaryAlternative;
 
     /** @var LoggerInterface */
     protected $logger;
@@ -63,6 +63,8 @@ class Archangel implements LoggerAwareInterface
         $this->headers['X-Mailer'] = $mailer;
 
         $this->logger = new NullLogger();
+        $this->boundaryMixed = sprintf('PHP-mixed-%s', uniqid());
+        $this->boundaryAlternative = sprintf('PHP-alternative-%s', uniqid());
     }
 
     /**
@@ -299,26 +301,26 @@ class Archangel implements LoggerAwareInterface
         $messageString = '';
         
         if (!empty($this->attachments)) {
-            $messageString .= "--{$this->getBoundary()}" . self::LINE_BREAK;
+            $messageString .= "--{$this->boundaryMixed}" . self::LINE_BREAK;
         }
         if (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
             if (!empty($this->attachments)) {
-                $messageString .= "Content-Type: multipart/alternative; boundary={$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+                $messageString .= "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}" . self::LINE_BREAK;
                 $messageString .= self::LINE_BREAK;
             }
-            $messageString .= "--{$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+            $messageString .= "--{$this->boundaryAlternative}" . self::LINE_BREAK;
             $messageString .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
             $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
             $messageString .= self::LINE_BREAK;
             $messageString .= $this->plainMessage;
             $messageString .= self::LINE_BREAK;
-            $messageString .= "--{$this->getAlternativeBoundary()}" . self::LINE_BREAK;
+            $messageString .= "--{$this->boundaryAlternative}" . self::LINE_BREAK;
             $messageString .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
             $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
             $messageString .= self::LINE_BREAK;
             $messageString .= $this->htmlMessage;
             $messageString .= self::LINE_BREAK;
-            $messageString .= "--{$this->getAlternativeBoundary()}--" . self::LINE_BREAK;
+            $messageString .= "--{$this->boundaryAlternative}--" . self::LINE_BREAK;
             $messageString .= self::LINE_BREAK;
         } elseif (!empty($this->plainMessage)) {
             if (!empty($this->attachments)) {
@@ -339,7 +341,7 @@ class Archangel implements LoggerAwareInterface
         }
         if (!empty($this->attachments)) {
             foreach ($this->attachments as $attachment) {
-                $messageString .= "--{$this->getBoundary()}" . self::LINE_BREAK;
+                $messageString .= "--{$this->boundaryMixed}" . self::LINE_BREAK;
                 $messageString .= "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"" . self::LINE_BREAK;
                 $messageString .= 'Content-Transfer-Encoding: base64' . self::LINE_BREAK;
                 $messageString .= 'Content-Disposition: attachment' . self::LINE_BREAK;
@@ -347,7 +349,7 @@ class Archangel implements LoggerAwareInterface
                 $messageString .= $this->buildAttachmentContent($attachment);
                 $messageString .= self::LINE_BREAK;
             }
-            $messageString .= "--{$this->getBoundary()}--" . self::LINE_BREAK;
+            $messageString .= "--{$this->boundaryMixed}--" . self::LINE_BREAK;
         }
         return $messageString;
     }
@@ -373,9 +375,9 @@ class Archangel implements LoggerAwareInterface
         }
         
         if (!empty($this->attachments)) {
-            $headerString .= "Content-Type: multipart/mixed; boundary=\"{$this->getBoundary()}\"";
+            $headerString .= "Content-Type: multipart/mixed; boundary=\"{$this->boundaryMixed}\"";
         } elseif (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
-            $headerString .= "Content-Type: multipart/alternative; boundary=\"{$this->getAlternativeBoundary()}\"";
+            $headerString .= "Content-Type: multipart/alternative; boundary=\"{$this->boundaryAlternative}\"";
         } elseif (!empty($this->htmlMessage)) {
             $headerString .= 'Content-type: text/html; charset="iso-8859-1"';
         }
@@ -401,33 +403,5 @@ class Archangel implements LoggerAwareInterface
         $contents = base64_encode($contents);
         $contents = chunk_split($contents);
         return $contents;
-    }
-
-    /**
-     * Holder for the boundry logic
-     * Not called/created unless it's needed
-     *
-     * @return  string  boundary
-     */
-    protected function getBoundary()
-    {
-        if (!isset($this->boundary)) {
-            $this->boundary = sprintf('PHP-mixed-%s', uniqid());
-        }
-        return $this->boundary;
-    }
-
-    /**
-     * Holder to create the alternative boundry logic
-     * Not called/created unless it's needed
-     *
-     * @return string alternative boundary
-     */
-    protected function getAlternativeBoundary()
-    {
-        if (!isset($this->alternativeBoundary)) {
-            $this->alternativeBoundary = sprintf('PHP-alternative-%s', uniqid());
-        }
-        return $this->alternativeBoundary;
     }
 }

@@ -46,6 +46,16 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeInstanceOf('Psr\Log\NullLogger', 'logger', $archangel);
     }
 
+    public function testConstructSetsBoundaries()
+    {
+        $archangel = new Archangel();
+        $expectedBoundaryMixed = sprintf('PHP-mixed-%s', uniqid());
+        $expectedBoundaryAlternative = sprintf('PHP-alternative-%s', uniqid());
+
+        $this->assertAttributeEquals($expectedBoundaryMixed, 'boundaryMixed', $archangel);
+        $this->assertAttributeEquals($expectedBoundaryAlternative, 'boundaryAlternative', $archangel);
+    }
+
     public function testSetLogger()
     {
         $logger = $this->getMock('Psr\Log\LoggerInterface');
@@ -449,26 +459,6 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $toAddresses = $buildMethod->invoke($archangel);
 
         $this->assertEquals('testOne@example.com, testTwo@example.com', $toAddresses);
-    }
-
-    public function testGetBoundary()
-    {
-        $archangel = new Archangel();
-        $boundaryMethod = $this->getProtectedMethod('getBoundary');
-        $boundary = $boundaryMethod->invoke($archangel);
-        $expectedBoundary = sprintf('PHP-mixed-%s', uniqid());
-
-        $this->assertEquals($expectedBoundary, $boundary);
-    }
-
-    public function testGetAlternativeBoundary()
-    {
-        $archangel = new Archangel();
-        $boundaryMethod = $this->getProtectedMethod('getAlternativeBoundary');
-        $boundary = $boundaryMethod->invoke($archangel);
-        $expectedBoundary = sprintf('PHP-alternative-%s', uniqid());
-
-        $this->assertEquals($expectedBoundary, $boundary);
     }
 
     protected function getProtectedProperty($property)
