@@ -277,6 +277,126 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeEquals('<p>An HTML message.</p>', 'htmlMessage', $archangel);
     }
 
+    /**
+     * @dataProvider dataBuildHeaders
+     */
+    public function testBuildHeaders(
+        $expectedHeaders,
+        $headers,
+        $attachments,
+        $plainMessage,
+        $htmlMessage
+    ) {
+        $archangel = new Archangel();
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headersProperty->setValue($archangel, $headers);
+
+        if (!empty($attachments)) {
+            $attachmentsProperty = $this->getProtectedProperty('attachments');
+            $attachmentsProperty->setValue($archangel, $attachments);
+        }
+
+        if (!empty($plainMessage)) {
+            $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+            $plainMessageProperty->setValue($archangel, $plainMessage);
+        }
+
+        if (!empty($htmlMessage)) {
+            $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+            $htmlMessageProperty->setValue($archangel, $htmlMessage);
+        }
+
+        $buildHeadersMethod = $this->getProtectedMethod('buildHeaders');
+        $builtHeaders = $buildHeadersMethod->invoke($archangel);
+
+        $this->assertEquals($expectedHeaders, $builtHeaders);
+    }
+
+    public function dataBuildHeaders()
+    {
+        return array(
+            array(
+                'expectedHeaders' =>
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0",
+                'headers' => array(
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => null,
+                'plainMessage' => true,
+                'htmlMessage' => null,
+            ),
+            array(
+                'expectedHeaders' =>
+                    "CC: testOne@example.com, testTwo@example.com\r\n" .
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0",
+                'headers' => array(
+                    'CC' => array('testOne@example.com', 'testTwo@example.com'),
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => null,
+                'plainMessage' => true,
+                'htmlMessage' => null,
+            ),
+            array(
+                'expectedHeaders' =>
+                    "BCC: testOne@example.com, testTwo@example.com\r\n" .
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0",
+                'headers' => array(
+                    'BCC' => array('testOne@example.com', 'testTwo@example.com'),
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => null,
+                'plainMessage' => true,
+                'htmlMessage' => null,
+            ),
+            array(
+                'expectedHeaders' =>
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0\r\n" .
+                    "Content-Type: multipart/mixed; boundary=\"PHP-mixed-1234567890123\"",
+                'headers' => array(
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => true,
+                'plainMessage' => true,
+                'htmlMessage' => null,
+            ),
+            array(
+                'expectedHeaders' =>
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0\r\n" .
+                    "Content-Type: multipart/alternative; boundary=\"PHP-alternative-1234567890123\"",
+                'headers' => array(
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => null,
+                'plainMessage' => true,
+                'htmlMessage' => true,
+            ),
+            array(
+                'expectedHeaders' =>
+                    "From: test@example.com\r\n" .
+                    "X-Mailer: PHP/6.0.0\r\n" .
+                    "Content-type: text/html; charset=\"iso-8859-1\"",
+                'headers' => array(
+                    'From' => 'test@example.com',
+                    'X-Mailer' => sprintf('PHP/%s', phpversion())
+                ),
+                'attachments' => null,
+                'plainMessage' => null,
+                'htmlMessage' => true,
+            ),
+        );
+    }
+
     public function testAddAttachment()
     {
         $archangel = new Archangel();
