@@ -362,27 +362,28 @@ class Archangel implements LoggerAwareInterface
      */
     protected function buildHeaders()
     {
-        $headerString = '';
+        $headers = array();
         foreach ($this->headers as $key => $value) {
-            $headerString .= sprintf('%s: %s', $key, $value) . self::LINE_BREAK;
+            array_push($headers, sprintf('%s: %s', $key, $value));
         }
-
         if (!empty($this->ccAddresses)) {
-            $headerString .= 'CC: ' . implode(', ', $this->ccAddresses) . self::LINE_BREAK;
+            $ccAddresses = implode(', ', $this->ccAddresses);
+            array_push($headers, "CC: {$ccAddresses}");
         }
         if (!empty($this->bccAddresses)) {
-            $headerString .= 'BCC: ' . implode(', ', $this->bccAddresses) . self::LINE_BREAK;
+            $bccAddresses = implode(', ', $this->bccAddresses);
+            array_push($headers, "BCC: {$bccAddresses}");
         }
         
         if (!empty($this->attachments)) {
-            $headerString .= "Content-Type: multipart/mixed; boundary=\"{$this->boundaryMixed}\"";
+            array_push($headers, "Content-Type: multipart/mixed; boundary=\"{$this->boundaryMixed}\"");
         } elseif (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
-            $headerString .= "Content-Type: multipart/alternative; boundary=\"{$this->boundaryAlternative}\"";
+            array_push($headers, "Content-Type: multipart/alternative; boundary=\"{$this->boundaryAlternative}\"");
         } elseif (!empty($this->htmlMessage)) {
-            $headerString .= 'Content-type: text/html; charset="iso-8859-1"';
+            array_push($headers, 'Content-type: text/html; charset="iso-8859-1"');
         }
 
-        return $headerString;
+        return implode(self::LINE_BREAK, $headers);
     }
 
     /**
