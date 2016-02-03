@@ -91,56 +91,84 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeContains('"Mr. Test Alot" <test@example.com>', 'toAddresses', $archangel);
     }
 
-    public function testAddCc()
+    public function testAddCC()
     {
         $archangel = new Archangel();
-        $archangel->addCc('test@example.com');
+        $archangel->addCC('test@example.com');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('test@example.com', 'ccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('CC' => array('test@example.com')),
+            $headers
+        );
     }
 
-    public function testAddCcMultiple()
+    public function testAddCCMultiple()
     {
         $archangel = new Archangel();
-        $archangel->addCc('testOne@example.com');
-        $archangel->addCc('testTwo@example.com');
+        $archangel->addCC('testOne@example.com');
+        $archangel->addCC('testTwo@example.com');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('testOne@example.com', 'ccAddresses', $archangel);
-        $this->assertAttributeContains('testTwo@example.com', 'ccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('CC' => array('testOne@example.com', 'testTwo@example.com')),
+            $headers
+        );
     }
 
-    public function testAddCcWithTitle()
+    public function testAddCCWithTitle()
     {
         $archangel = new Archangel();
-        $archangel->addCc('test@example.com', 'Mr. Test Alot');
+        $archangel->addCC('test@example.com', 'Mr. Test Alot');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('"Mr. Test Alot" <test@example.com>', 'ccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('CC' => array('"Mr. Test Alot" <test@example.com>')),
+            $headers
+        );
     }
 
-    public function testAddBcc()
+    public function testAddBCC()
     {
         $archangel = new Archangel();
-        $archangel->addBcc('test@example.com');
+        $archangel->addBCC('test@example.com');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('test@example.com', 'bccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('BCC' => array('test@example.com')),
+            $headers
+        );
     }
 
-    public function testAddBccMultiple()
+    public function testAddBCCMultiple()
     {
         $archangel = new Archangel();
-        $archangel->addBcc('testOne@example.com');
-        $archangel->addBcc('testTwo@example.com');
+        $archangel->addBCC('testOne@example.com');
+        $archangel->addBCC('testTwo@example.com');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('testOne@example.com', 'bccAddresses', $archangel);
-        $this->assertAttributeContains('testTwo@example.com', 'bccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('BCC' => array('testOne@example.com', 'testTwo@example.com')),
+            $headers
+        );
     }
 
-    public function testAddBccWithTitle()
+    public function testAddBCCWithTitle()
     {
         $archangel = new Archangel();
-        $archangel->addBcc('test@example.com', 'Mr. Test Alot');
+        $archangel->addBCC('test@example.com', 'Mr. Test Alot');
+        $headersProperty = $this->getProtectedProperty('headers');
+        $headers = $headersProperty->getValue($archangel);
 
-        $this->assertAttributeContains('"Mr. Test Alot" <test@example.com>', 'bccAddresses', $archangel);
+        $this->assertArraySubset(
+            array('BCC' => array('"Mr. Test Alot" <test@example.com>')),
+            $headers
+        );
     }
 
     public function testSetFrom()
@@ -303,7 +331,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
             'to' => 'test@example.com',
             'subject' => 'Test Subject',
             'message' => 'Plain text message' . Archangel::LINE_BREAK,
-            'headers' => 'X-Mailer: PHP/6.0.0' . Archangel::LINE_BREAK,
+            'headers' => 'X-Mailer: PHP/6.0.0',
         );
 
         $this->assertEquals($expectedResponse, $response);

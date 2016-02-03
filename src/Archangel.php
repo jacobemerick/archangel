@@ -22,12 +22,6 @@ class Archangel implements LoggerAwareInterface
     /** @var array $toAddresses */
     protected $toAddresses = array();
 
-    /** @var array $ccAddresses */
-    protected $ccAddresses = array();
-
-    /** @var array $bccAddresses */
-    protected $bccAddresses = array();
-
     /** @var array $headers */
     protected $headers = array();
 
@@ -107,8 +101,12 @@ class Archangel implements LoggerAwareInterface
      */
     public function addCC($address, $title = '')
     {
+        if (!isset($this->headers['CC'])) {
+            $this->headers['CC'] = array();
+        }
+
         array_push(
-            $this->ccAddresses,
+            $this->headers['CC'],
             $this->formatEmailAddress($address, $title)
         );
 
@@ -125,8 +123,12 @@ class Archangel implements LoggerAwareInterface
      */
     public function addBCC($address, $title = '')
     {
+        if (!isset($this->headers['BCC'])) {
+            $this->headers['BCC'] = array();
+        }
+
         array_push(
-            $this->bccAddresses,
+            $this->headers['BCC'],
             $this->formatEmailAddress($address, $title)
         );
 
@@ -364,23 +366,27 @@ class Archangel implements LoggerAwareInterface
     {
         $headers = array();
         foreach ($this->headers as $key => $value) {
+            if ($key == 'CC' || $key == 'BCC') {
+                $value = implode(', ', $value);
+            }
             array_push($headers, sprintf('%s: %s', $key, $value));
         }
-        if (!empty($this->ccAddresses)) {
-            $ccAddresses = implode(', ', $this->ccAddresses);
-            array_push($headers, "CC: {$ccAddresses}");
-        }
-        if (!empty($this->bccAddresses)) {
-            $bccAddresses = implode(', ', $this->bccAddresses);
-            array_push($headers, "BCC: {$bccAddresses}");
-        }
-        
+
         if (!empty($this->attachments)) {
-            array_push($headers, "Content-Type: multipart/mixed; boundary=\"{$this->boundaryMixed}\"");
+            array_push(
+                $headers,
+                "Content-Type: multipart/mixed; boundary=\"{$this->boundaryMixed}\""
+            );
         } elseif (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
-            array_push($headers, "Content-Type: multipart/alternative; boundary=\"{$this->boundaryAlternative}\"");
+            array_push(
+                $headers,
+                "Content-Type: multipart/alternative; boundary=\"{$this->boundaryAlternative}\""
+            );
         } elseif (!empty($this->htmlMessage)) {
-            array_push($headers, 'Content-type: text/html; charset="iso-8859-1"');
+            array_push(
+                $headers,
+                'Content-type: text/html; charset="iso-8859-1"'
+            );
         }
 
         return implode(self::LINE_BREAK, $headers);
