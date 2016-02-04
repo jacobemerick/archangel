@@ -11,6 +11,8 @@ engines:
     enabled: true
   phpmd:
     enabled: true
+    exclude_fingerprints:
+    - 8ba630e3b3bad9153e8a7a5ab0eb93ed
 ratings:
   paths:
   - src/**

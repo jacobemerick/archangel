@@ -457,6 +457,14 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expectedResponse, $response);
     }
 
+    public function testSendFailure()
+    {
+        $archangel = new Archangel();
+        $response = $archangel->send();
+
+        $this->assertFalse($response);
+    }
+
     /**
      * @dataProvider dataCheckRequiredFields
      */
