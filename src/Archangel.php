@@ -256,7 +256,7 @@ class Archangel implements LoggerAwareInterface
 
         $recipients = $this->buildTo();
         $subject = $this->subject;
-        $message = $this->buildMessage();
+        $message = (empty($this->attachments)) ? $this->buildMessage() : $this->buildHtmlMessage();
         $headers = $this->buildHeaders();
 
         return mail($recipients, $subject, $message, $headers);
@@ -276,7 +276,11 @@ class Archangel implements LoggerAwareInterface
             return false;
         }
 
-        if (empty($this->plainMessage) && empty($this->htmlMessage) && empty($this->attachments)) {
+        if (
+            empty($this->plainMessage) &&
+            empty($this->htmlMessage) &&
+            empty($this->attachments)
+        ) {
             return false;
         }
 
@@ -294,67 +298,106 @@ class Archangel implements LoggerAwareInterface
     }
 
     /**
-     * Long, nasty creater of the actual message, with all the multipart logic you'd never want to see
+     * Returns a simple email message without attachments
      *
      * @return string email message
      */
     protected function buildMessage()
     {
-        $isMultipart = (!empty($this->plainMessage) && !empty($this->htmlMessage));
-        $hasAttachments = (!empty($this->attachments));
+        if (empty($this->plainMessage) && empty($this->htmlMessage)) {
+            return '';
+        }
+        if (!empty($this->plainMessage) && empty($this->htmlMessage)) {
+            return $this->plainMessage;
+        }
+        if (empty($this->plainMessage) && !empty($this->htmlMessage)) {
+            return $this->htmlMessage;
+        }
 
         $message = array();
-
-        if ($hasAttachments) {
-            array_push($message, "--{$this->boundaryMixed}");
-        }
-        if ($isMultipart) {
-            if ($hasAttachments) {
-                array_push($message, "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}");
-                array_push($message, '');
-            }
-            array_push($message, "--{$this->boundaryAlternative}");
-            array_push($message, 'Content-Type: text/plain; charset="iso-8859"');
-            array_push($message, 'Content-Transfer-Encoding: 7bit');
-            array_push($message, '');
-            array_push($message, $this->plainMessage);
-            array_push($message, "--{$this->boundaryAlternative}");
-            array_push($message, 'Content-Type: text/html; charset="iso-8859-1"');
-            array_push($message, 'Content-Transfer-Encoding: 7bit');
-            array_push($message, '');
-            array_push($message, $this->htmlMessage);
-            array_push($message, "--{$this->boundaryAlternative}--");
-            array_push($message, '');
-        } elseif (!empty($this->plainMessage)) {
-            if ($hasAttachments) {
-                array_push($message, 'Content-Type: text/plain; charset="iso-8859"');
-                array_push($message, 'Content-Transfer-Encoding: 7bit');
-                array_push($message, '');
-            }
-            array_push($message, $this->plainMessage);
-        } elseif (!empty($this->htmlMessage)) {
-            if (!empty($hasAttachments)) {
-                array_push($message, 'Content-Type: text/html; charset="iso-8859-1"');
-                array_push($message, 'Content-Transfer-Encoding: 7bit');
-                array_push($message, '');
-            }
-            array_push($message, $this->htmlMessage);
-        }
-        if ($hasAttachments) {
-            foreach ($this->attachments as $attachment) {
-                array_push($message, "--{$this->boundaryMixed}");
-                array_push($message, "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"");
-                array_push($message, 'Content-Transfer-Encoding: base64');
-                array_push($message, 'Content-Disposition: attachment');
-                array_push($message, '');
-                array_push($message, $this->buildAttachmentContent($attachment['path']));
-            }
-            array_push($message, "--{$this->boundaryMixed}--");
-        }
+        array_push($message, "--{$this->boundaryAlternative}");
+        $message += $this->buildPlainMessageHeaders();
+        array_push($message, $this->plainMessage);
+        array_push($message, "--{$this->boundaryAlternative}");
+        $message += $this->buildHtmlMessageHeaders();
+        array_push($message, $this->htmlMessage);
+        array_push($message, "--{$this->boundaryAlternative}--");
 
         return implode(self::LINE_BREAK, $message);
     }
 
+    /**
+     * Build multi-part message with attachments
+     *
+     * @return string email message
+     */
+    protected function buildMessageWithAttachments()
+    {
+        $message = array();
+
+        if (!empty($this->plainMessage) || !empty($this->htmlMessage)) {
+            array_push($message, "--{$this->boundaryMixed}");
+        }
+
+        if (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
+            array_push($message, "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}");
+            array_push($message, '');
+            array_push($message, "--{$this->boundaryAlternative}");
+            $message += $this->buildPlainMessageHeaders();
+            array_push($message, $this->plainMessage);
+            array_push($message, "--{$this->boundaryAlternative}");
+            $message += $this->buildHtmlMessageHeaders();
+            array_push($message, $this->htmlMessage);
+            array_push($message, "--{$this->boundaryAlternative}--");
+            array_push($message, '');
+        } elseif (!empty($this->plainMessage)) {
+            $message += $this->buildPlainMessageHeaders();
+            array_push($message, $this->plainMessage);
+        } elseif (!empty($this->htmlMessage)) {
+            $message += $this->buildHtmlMessageHeaders();
+            array_push($message, $this->htmlMessage);
+        }
+        foreach ($this->attachments as $attachment) {
+            array_push($message, "--{$this->boundaryMixed}");
+            array_push($message, "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"");
+            array_push($message, 'Content-Transfer-Encoding: base64');
+            array_push($message, 'Content-Disposition: attachment');
+            array_push($message, '');
+            array_push($message, $this->buildAttachmentContent($attachment['path']));
+        }
+        array_push($message, "--{$this->boundaryMixed}--");
+
+        return implode(self::LINE_BREAK, $message);
+    }
+
+
+    /**
+     * Shared holder for the plain message header
+     *
+     * @return array
+     */
+    protected function getPlainMessageHeader()
+    {
+        return array(
+            'Content-Type: text/plain; charset="iso-8859"',
+            'Content-Transfer-Encoding: 7bit',
+            '',
+        );
+    }
+
+    /**
+     * Shared holder for the html message header
+     *
+     * @return array
+     */
+    protected function getHtmlMessageHeader()
+    {
+        return array(
+            'Content-Type: text/html; charset="iso-8859-1"',
+            'Content-Transfer-Encoding: 7bit',
+            '',
+        );
+    }
 
     /**
      * Builder for the additional headers needed for multipart emails
