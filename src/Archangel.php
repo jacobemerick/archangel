@@ -276,11 +276,7 @@ class Archangel implements LoggerAwareInterface
             return false;
         }
 
-        if (
-            empty($this->plainMessage) &&
-            empty($this->htmlMessage) &&
-            empty($this->attachments)
-        ) {
+        if (empty($this->plainMessage) && empty($this->htmlMessage) && empty($this->attachments)) {
             return false;
         }
 
@@ -376,7 +372,7 @@ class Archangel implements LoggerAwareInterface
      *
      * @return array
      */
-    protected function getPlainMessageHeader()
+    protected function buildPlainMessageHeader()
     {
         return array(
             'Content-Type: text/plain; charset="iso-8859"',
@@ -390,7 +386,7 @@ class Archangel implements LoggerAwareInterface
      *
      * @return array
      */
-    protected function getHtmlMessageHeader()
+    protected function buildHtmlMessageHeader()
     {
         return array(
             'Content-Type: text/html; charset="iso-8859-1"',
