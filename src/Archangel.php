@@ -300,60 +300,59 @@ class Archangel implements LoggerAwareInterface
      */
     protected function buildMessage()
     {
-        $messageString = '';
-        
-        if (!empty($this->attachments)) {
-            $messageString .= "--{$this->boundaryMixed}" . self::LINE_BREAK;
+        $isMultipart = (!empty($this->plainMessage) && !empty($this->htmlMessage));
+        $hasAttachments = (!empty($this->attachments));
+
+        $message = array();
+
+        if ($hasAttachments) {
+            array_push($message, "--{$this->boundaryMixed}");
         }
-        if (!empty($this->plainMessage) && !empty($this->htmlMessage)) {
-            if (!empty($this->attachments)) {
-                $messageString .= "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}" . self::LINE_BREAK;
-                $messageString .= self::LINE_BREAK;
+        if ($isMultipart) {
+            if ($hasAttachments) {
+                array_push($message, "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}");
+                array_push($message, '');
             }
-            $messageString .= "--{$this->boundaryAlternative}" . self::LINE_BREAK;
-            $messageString .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
-            $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
-            $messageString .= self::LINE_BREAK;
-            $messageString .= $this->plainMessage;
-            $messageString .= self::LINE_BREAK;
-            $messageString .= "--{$this->boundaryAlternative}" . self::LINE_BREAK;
-            $messageString .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
-            $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
-            $messageString .= self::LINE_BREAK;
-            $messageString .= $this->htmlMessage;
-            $messageString .= self::LINE_BREAK;
-            $messageString .= "--{$this->boundaryAlternative}--" . self::LINE_BREAK;
-            $messageString .= self::LINE_BREAK;
+            array_push($message, "--{$this->boundaryAlternative}");
+            array_push($message, 'Content-Type: text/plain; charset="iso-8859"');
+            array_push($message, 'Content-Transfer-Encoding: 7bit');
+            array_push($message, '');
+            array_push($message, $this->plainMessage);
+            array_push($message, "--{$this->boundaryAlternative}");
+            array_push($message, 'Content-Type: text/html; charset="iso-8859-1"');
+            array_push($message, 'Content-Transfer-Encoding: 7bit');
+            array_push($message, '');
+            array_push($message, $this->htmlMessage);
+            array_push($message, "--{$this->boundaryAlternative}--");
+            array_push($message, '');
         } elseif (!empty($this->plainMessage)) {
-            if (!empty($this->attachments)) {
-                $messageString .= 'Content-Type: text/plain; charset="iso-8859"' . self::LINE_BREAK;
-                $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
-                $messageString .= self::LINE_BREAK;
+            if ($hasAttachments) {
+                array_push($message, 'Content-Type: text/plain; charset="iso-8859"');
+                array_push($message, 'Content-Transfer-Encoding: 7bit');
+                array_push($message, '');
             }
-            $messageString .= $this->plainMessage;
-            $messageString .= self::LINE_BREAK;
+            array_push($message, $this->plainMessage);
         } elseif (!empty($this->htmlMessage)) {
-            if (!empty($this->attachments)) {
-                $messageString .= 'Content-Type: text/html; charset="iso-8859-1"' . self::LINE_BREAK;
-                $messageString .= 'Content-Transfer-Encoding: 7bit' . self::LINE_BREAK;
-                $messageString .= self::LINE_BREAK;
+            if (!empty($hasAttachments)) {
+                array_push($message, 'Content-Type: text/html; charset="iso-8859-1"');
+                array_push($message, 'Content-Transfer-Encoding: 7bit');
+                array_push($message, '');
             }
-            $messageString .= $this->htmlMessage;
-            $messageString .= self::LINE_BREAK;
+            array_push($message, $this->htmlMessage);
         }
-        if (!empty($this->attachments)) {
+        if ($hasAttachments) {
             foreach ($this->attachments as $attachment) {
-                $messageString .= "--{$this->boundaryMixed}" . self::LINE_BREAK;
-                $messageString .= "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"" . self::LINE_BREAK;
-                $messageString .= 'Content-Transfer-Encoding: base64' . self::LINE_BREAK;
-                $messageString .= 'Content-Disposition: attachment' . self::LINE_BREAK;
-                $messageString .= self::LINE_BREAK;
-                $messageString .= $this->buildAttachmentContent($attachment);
-                $messageString .= self::LINE_BREAK;
+                array_push($message, "--{$this->boundaryMixed}");
+                array_push($message, "Content-Type: {$attachment['type']}; name=\"{$attachment['title']}\"");
+                array_push($message, 'Content-Transfer-Encoding: base64');
+                array_push($message, 'Content-Disposition: attachment');
+                array_push($message, '');
+                array_push($message, $this->buildAttachmentContent($attachment['path']));
             }
-            $messageString .= "--{$this->boundaryMixed}--" . self::LINE_BREAK;
+            array_push($message, "--{$this->boundaryMixed}--");
         }
-        return $messageString;
+
+        return implode(self::LINE_BREAK, $message);
     }
 
 
@@ -395,16 +394,19 @@ class Archangel implements LoggerAwareInterface
     /**
      * File reader for attachments
      *
+     * @param string $path filepath of the attachment
+     *
      * @return string binary representation of file, base64'd
      */
-    protected function buildAttachmentContent($attachment)
+    protected function buildAttachmentContent($path)
     {
-        if (!file_exists($attachment['path'])) {
-            return ''; // todo log error
+        if (!file_exists($path)) {
+            $this->logger->error("Could not find file {$path} for attaching to Archangel mail.");
+            return '';
         }
 
-        $handle = fopen($attachment['path'], 'r');
-        $contents = fread($handle, filesize($attachment['path']));
+        $handle = fopen($path, 'r');
+        $contents = fread($handle, filesize($path));
         fclose($handle);
 
         $contents = base64_encode($contents);

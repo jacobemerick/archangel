@@ -450,7 +450,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $expectedResponse = array(
             'to' => 'test@example.com',
             'subject' => 'Test Subject',
-            'message' => 'Plain text message' . Archangel::LINE_BREAK,
+            'message' => 'Plain text message',
             'headers' => 'X-Mailer: PHP/6.0.0',
         );
 
