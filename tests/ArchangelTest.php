@@ -2,6 +2,8 @@
 
 namespace Jacobemerick\Archangel;
 
+use Monolog\Logger;
+use Monolog\Handler\TestHandler;
 use PHPUnit_Framework_TestCase;
 use ReflectionClass;
 
@@ -645,6 +647,24 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
                 'htmlMessage' => true,
             ),
         );
+    }
+
+    public function testBuildAttachmentContent()
+    {
+        $textContent = 'Dummy Content';
+        $expectedContent = chunk_split(base64_encode($textContent));
+
+        $path = __DIR__ . '/test.txt';
+        $handle = fopen($path, 'w');
+        fwrite($handle, $textContent);
+        fclose($handle);
+
+        $archangel = new Archangel();
+        $buildMethod = $this->getProtectedMethod('buildAttachmentContent');
+        $content = $buildMethod->invokeArgs($archangel, array($path));
+
+        unlink($path);
+        $this->assertEquals($expectedContent, $content);
     }
 
     protected function getProtectedProperty($property)
