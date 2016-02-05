@@ -5,6 +5,9 @@ engines:
     config:
       languages:
       - php
+    exclude_fingerprints:
+      - 08ffafda5a68ac290e584efb3439571f
+      - 582ae790febafdb64d75d0eb58f2bc01
   fixme:
     enabled: true
   phpcodesniffer:
@@ -13,6 +16,8 @@ engines:
     enabled: true
     exclude_fingerprints:
     - 8ba630e3b3bad9153e8a7a5ab0eb93ed
+    - c2349850a291e264f85c5afe4bfe2d40
+    - c610efe2fcbf3fc5cd85584eeb4e3bd7
 ratings:
   paths:
   - src/**
