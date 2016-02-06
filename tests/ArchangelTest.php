@@ -499,6 +499,274 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('testOne@example.com, testTwo@example.com', $toAddresses);
     }
 
+    public function testBuildMessageEmpty()
+    {
+        $archangel = new Archangel();
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, '');
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, '');
+        $buildMethod = $this->getProtectedMethod('buildMessage');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        $this->assertEmpty($builtMessage);
+    }
+
+    public function testBuildMessagePlain()
+    {
+        $message = 'Plain text message';
+
+        $archangel = new Archangel();
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, $message);
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, '');
+        $buildMethod = $this->getProtectedMethod('buildMessage');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        $this->assertEquals($message, $builtMessage);
+    }
+
+    public function testBuildMessageHtml()
+    {
+        $message = '<p>HTML Message.</p>';
+
+        $archangel = new Archangel();
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, '');
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, $message);
+        $buildMethod = $this->getProtectedMethod('buildMessage');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        $this->assertEquals($message, $builtMessage);
+    }
+
+    public function testBuildMessageMultipart()
+    {
+        $plainMessage = 'Plain text message';
+        $htmlMessage = '<p>HTML Message.</p>';
+
+        $archangel = new Archangel();
+
+        $boundaryProperty = $this->getProtectedProperty('boundaryAlternative');
+        $boundary = $boundaryProperty->getValue($archangel);
+        $plainMsgMethod = $this->getProtectedMethod('buildPlainMessageHeader');
+        $plainMsgHeaders = $plainMsgMethod->invoke($archangel);
+        $htmlMsgMethod = $this->getProtectedMethod('buildHtmlMessageHeader');
+        $htmlMsgHeaders = $htmlMsgMethod->invoke($archangel);
+
+        $expectedMessage = array();
+        array_push($expectedMessage, "--{$boundary}");
+        $expectedMessage += $plainMsgHeaders;
+        array_push($expectedMessage, $plainMessage);
+        array_push($expectedMessage, "--{$boundary}");
+        $expectedMessage += $htmlMsgHeaders;
+        array_push($expectedMessage, $htmlMessage);
+        array_push($expectedMessage, "--{$boundary}--");
+        $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
+
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, $plainMessage);
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, $htmlMessage);
+        $buildMethod = $this->getProtectedMethod('buildMessage');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        $this->assertEquals($expectedMessage, $builtMessage);
+    }
+
+    public function testBuildMessageWithAttachmentsEmpty()
+    {
+        $path = __DIR__ . '/test.txt';
+        $textContent = 'Dummy Content';
+        $this->makeTmpFile($path, $textContent);
+
+        $encodedContent = chunk_split(base64_encode($textContent));
+        $type = 'text/plain';
+        $title = 'Test File';
+
+        $archangel = new Archangel();
+
+        $boundaryMixedProperty = $this->getProtectedProperty('boundaryMixed');
+        $boundaryMixed = $boundaryMixedProperty->getValue($archangel);
+
+        $expectedMessage = array();
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
+        array_push($expectedMessage, 'Content-Transfer-Encoding: base64');
+        array_push($expectedMessage, 'Content-Disposition: attachment');
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, $encodedContent);
+        array_push($expectedMessage, "--{$boundaryMixed}--");
+        $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
+
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, '');
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, '');
+        $attachmentProperty = $this->getProtectedProperty('attachments');
+        $attachmentProperty->setValue($archangel, array(
+            array('path' => $path, 'type' => $type, 'title' => $title)
+        ));
+        $buildMethod = $this->getProtectedMethod('buildMessageWithAttachments');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        unlink($path);
+        $this->assertEquals($expectedMessage, $builtMessage);
+    }
+
+    public function testBuildMessageWithAttachmentsPlain()
+    {
+        $path = __DIR__ . '/test.txt';
+        $textContent = 'Dummy Content';
+        $this->makeTmpFile($path, $textContent);
+
+        $encodedContent = chunk_split(base64_encode($textContent));
+        $type = 'text/plain';
+        $title = 'Test File';
+        $message = 'Plain text message';
+
+        $archangel = new Archangel();
+
+        $boundaryMixedProperty = $this->getProtectedProperty('boundaryMixed');
+        $boundaryMixed = $boundaryMixedProperty->getValue($archangel);
+        $plainMsgMethod = $this->getProtectedMethod('buildPlainMessageHeader');
+        $plainMsgHeaders = $plainMsgMethod->invoke($archangel);
+
+        $expectedMessage = array();
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        $expectedMessage += $plainMsgHeaders;
+        array_push($expectedMessage, $message);
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
+        array_push($expectedMessage, 'Content-Transfer-Encoding: base64');
+        array_push($expectedMessage, 'Content-Disposition: attachment');
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, $encodedContent);
+        array_push($expectedMessage, "--{$boundaryMixed}--");
+        $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
+
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, $message);
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, '');
+        $attachmentProperty = $this->getProtectedProperty('attachments');
+        $attachmentProperty->setValue($archangel, array(
+            array('path' => $path, 'type' => $type, 'title' => $title)
+        ));
+        $buildMethod = $this->getProtectedMethod('buildMessageWithAttachments');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        unlink($path);
+        $this->assertEquals($expectedMessage, $builtMessage);
+    }
+
+    public function testBuildMessageWithAttachmentsHtml()
+    {
+        $path = __DIR__ . '/test.txt';
+        $textContent = 'Dummy Content';
+        $this->makeTmpFile($path, $textContent);
+
+        $encodedContent = chunk_split(base64_encode($textContent));
+        $type = 'text/plain';
+        $title = 'Test File';
+        $message = '<p>HTML Message.</p>';
+
+        $archangel = new Archangel();
+
+        $boundaryMixedProperty = $this->getProtectedProperty('boundaryMixed');
+        $boundaryMixed = $boundaryMixedProperty->getValue($archangel);
+        $htmlMsgMethod = $this->getProtectedMethod('buildHtmlMessageHeader');
+        $htmlMsgHeaders = $htmlMsgMethod->invoke($archangel);
+
+        $expectedMessage = array();
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        $expectedMessage += $htmlMsgHeaders;
+        array_push($expectedMessage, $message);
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
+        array_push($expectedMessage, 'Content-Transfer-Encoding: base64');
+        array_push($expectedMessage, 'Content-Disposition: attachment');
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, $encodedContent);
+        array_push($expectedMessage, "--{$boundaryMixed}--");
+        $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
+
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, '');
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, $message);
+        $attachmentProperty = $this->getProtectedProperty('attachments');
+        $attachmentProperty->setValue($archangel, array(
+            array('path' => $path, 'type' => $type, 'title' => $title)
+        ));
+        $buildMethod = $this->getProtectedMethod('buildMessageWithAttachments');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        unlink($path);
+        $this->assertEquals($expectedMessage, $builtMessage);
+    }
+
+    public function testBuildMessageWithAttachmentsMultipart()
+    {
+        $path = __DIR__ . '/test.txt';
+        $textContent = 'Dummy Content';
+        $this->makeTmpFile($path, $textContent);
+
+        $encodedContent = chunk_split(base64_encode($textContent));
+        $type = 'text/plain';
+        $title = 'Test File';
+        $plainMessage = 'Plain text message';
+        $htmlMessage = '<p>HTML Message.</p>';
+
+        $archangel = new Archangel();
+
+        $boundaryMixedProperty = $this->getProtectedProperty('boundaryMixed');
+        $boundaryMixed = $boundaryMixedProperty->getValue($archangel);
+        $boundaryAltProperty = $this->getProtectedProperty('boundaryAlternative');
+        $boundaryAlternative = $boundaryAltProperty->getValue($archangel);
+        $plainMsgMethod = $this->getProtectedMethod('buildPlainMessageHeader');
+        $plainMsgHeaders = $plainMsgMethod->invoke($archangel);
+        $htmlMsgMethod = $this->getProtectedMethod('buildHtmlMessageHeader');
+        $htmlMsgHeaders = $htmlMsgMethod->invoke($archangel);
+
+        $expectedMessage = array();
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        array_push($expectedMessage, "Content-Type: multipart/alternative; boundary={$boundaryAlternative}");
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, "--{$boundaryAlternative}");
+        $expectedMessage += $plainMsgHeaders;
+        array_push($expectedMessage, $plainMessage);
+        array_push($expectedMessage, "--{$boundaryAlternative}");
+        $expectedMessage += $htmlMsgHeaders;
+        array_push($expectedMessage, $htmlMessage);
+        array_push($expectedMessage, "--{$boundaryAlternative}--");
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, "--{$boundaryMixed}");
+        array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
+        array_push($expectedMessage, 'Content-Transfer-Encoding: base64');
+        array_push($expectedMessage, 'Content-Disposition: attachment');
+        array_push($expectedMessage, '');
+        array_push($expectedMessage, $encodedContent);
+        array_push($expectedMessage, "--{$boundaryMixed}--");
+        $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
+
+        $plainMessageProperty = $this->getProtectedProperty('plainMessage');
+        $plainMessageProperty->setValue($archangel, $plainMessage);
+        $htmlMessageProperty = $this->getProtectedProperty('htmlMessage');
+        $htmlMessageProperty->setValue($archangel, $htmlMessage);
+        $attachmentProperty = $this->getProtectedProperty('attachments');
+        $attachmentProperty->setValue($archangel, array(
+            array('path' => $path, 'type' => $type, 'title' => $title)
+        ));
+        $buildMethod = $this->getProtectedMethod('buildMessageWithAttachments');
+        $builtMessage = $buildMethod->invoke($archangel);
+
+        unlink($path);
+        $this->assertEquals($expectedMessage, $builtMessage);
+    }
+
     public function testBuildPlainMessageHeader()
     {
         $expectedMessageHeader = array(
@@ -651,13 +919,11 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
     public function testBuildAttachmentContent()
     {
-        $textContent = 'Dummy Content';
-        $expectedContent = chunk_split(base64_encode($textContent));
-
         $path = __DIR__ . '/test.txt';
-        $handle = fopen($path, 'w');
-        fwrite($handle, $textContent);
-        fclose($handle);
+        $textContent = 'Dummy Content';
+        $this->makeTmpFile($path, $textContent);
+
+        $expectedContent = chunk_split(base64_encode($textContent));
 
         $archangel = new Archangel();
         $buildMethod = $this->getProtectedMethod('buildAttachmentContent');
@@ -695,5 +961,12 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $reflectedMethod->setAccessible(true);
 
         return $reflectedMethod;
+    }
+
+    protected function makeTmpFile($path, $content)
+    {
+        $handle = fopen($path, 'w');
+        fwrite($handle, $content);
+        fclose($handle);
     }
 }
