@@ -256,7 +256,7 @@ class Archangel implements LoggerAwareInterface
 
         $recipients = $this->buildTo();
         $subject = $this->subject;
-        $message = (empty($this->attachments)) ? $this->buildMessage() : $this->buildHtmlMessage();
+        $message = (empty($this->attachments)) ? $this->buildMessage() : $this->buildMessageWithAttachments();
         $headers = $this->buildHeaders();
 
         return mail($recipients, $subject, $message, $headers);
