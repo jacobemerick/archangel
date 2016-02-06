@@ -558,10 +558,10 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
         $expectedMessage = array();
         array_push($expectedMessage, "--{$boundary}");
-        $expectedMessage += $plainMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $plainMsgHeaders);
         array_push($expectedMessage, $plainMessage);
         array_push($expectedMessage, "--{$boundary}");
-        $expectedMessage += $htmlMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $htmlMsgHeaders);
         array_push($expectedMessage, $htmlMessage);
         array_push($expectedMessage, "--{$boundary}--");
         $expectedMessage = implode(Archangel::LINE_BREAK, $expectedMessage);
@@ -636,7 +636,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
         $expectedMessage = array();
         array_push($expectedMessage, "--{$boundaryMixed}");
-        $expectedMessage += $plainMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $plainMsgHeaders);
         array_push($expectedMessage, $message);
         array_push($expectedMessage, "--{$boundaryMixed}");
         array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
@@ -682,7 +682,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
         $expectedMessage = array();
         array_push($expectedMessage, "--{$boundaryMixed}");
-        $expectedMessage += $htmlMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $htmlMsgHeaders);
         array_push($expectedMessage, $message);
         array_push($expectedMessage, "--{$boundaryMixed}");
         array_push($expectedMessage, "Content-Type: {$type}; name=\"{$title}\"");
@@ -736,10 +736,10 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         array_push($expectedMessage, "Content-Type: multipart/alternative; boundary={$boundaryAlternative}");
         array_push($expectedMessage, '');
         array_push($expectedMessage, "--{$boundaryAlternative}");
-        $expectedMessage += $plainMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $plainMsgHeaders);
         array_push($expectedMessage, $plainMessage);
         array_push($expectedMessage, "--{$boundaryAlternative}");
-        $expectedMessage += $htmlMsgHeaders;
+        $expectedMessage = array_merge($expectedMessage, $htmlMsgHeaders);
         array_push($expectedMessage, $htmlMessage);
         array_push($expectedMessage, "--{$boundaryAlternative}--");
         array_push($expectedMessage, '');

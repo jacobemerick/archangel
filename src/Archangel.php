@@ -312,10 +312,10 @@ class Archangel implements LoggerAwareInterface
 
         $message = array();
         array_push($message, "--{$this->boundaryAlternative}");
-        $message += $this->buildPlainMessageHeader();
+        $message = array_merge($message, $this->buildPlainMessageHeader());
         array_push($message, $this->plainMessage);
         array_push($message, "--{$this->boundaryAlternative}");
-        $message += $this->buildHtmlMessageHeader();
+        $message = array_merge($message, $this->buildHtmlMessageHeader());
         array_push($message, $this->htmlMessage);
         array_push($message, "--{$this->boundaryAlternative}--");
 
@@ -339,18 +339,18 @@ class Archangel implements LoggerAwareInterface
             array_push($message, "Content-Type: multipart/alternative; boundary={$this->boundaryAlternative}");
             array_push($message, '');
             array_push($message, "--{$this->boundaryAlternative}");
-            $message += $this->buildPlainMessageHeader();
+            $message = array_merge($message, $this->buildPlainMessageHeader());
             array_push($message, $this->plainMessage);
             array_push($message, "--{$this->boundaryAlternative}");
-            $message += $this->buildHtmlMessageHeader();
+            $message = array_merge($message, $this->buildHtmlMessageHeader());
             array_push($message, $this->htmlMessage);
             array_push($message, "--{$this->boundaryAlternative}--");
             array_push($message, '');
         } elseif (!empty($this->plainMessage)) {
-            $message += $this->buildPlainMessageHeader();
+            $message = array_merge($message, $this->buildPlainMessageHeader());
             array_push($message, $this->plainMessage);
         } elseif (!empty($this->htmlMessage)) {
-            $message += $this->buildHtmlMessageHeader();
+            $message = array_merge($message, $this->buildHtmlMessageHeader());
             array_push($message, $this->htmlMessage);
         }
         foreach ($this->attachments as $attachment) {
