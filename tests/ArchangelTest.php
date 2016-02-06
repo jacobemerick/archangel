@@ -667,6 +667,18 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expectedContent, $content);
     }
 
+    public function testBuildAttachmentContentFailure()
+    {
+        $logger = $this->getMockBuilder('Psr\Log\LoggerInterface')->getMock();
+
+        $archangel = new Archangel();
+        $archangel->setLogger($logger);
+        $buildMethod = $this->getProtectedMethod('buildAttachmentContent');
+        $content = $buildMethod->invokeArgs($archangel, array('INVALID_PATH'));
+
+        $this->assertEmpty($content);
+    }
+
     protected function getProtectedProperty($property)
     {
         $reflectedArchangel = new ReflectionClass('Jacobemerick\Archangel\Archangel');
