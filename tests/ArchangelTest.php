@@ -41,6 +41,20 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         $this->assertAttributeEquals($headers, 'headers', $archangel);
     }
 
+    public function testConstructSetsDefaultTestMode()
+    {
+        $archangel = new Archangel();
+
+        $this->assertAttributeEquals(false, 'isTestMode', $archangel);
+    }
+
+    public function testConstructOverridesTestMode()
+    {
+        $archangel = new Archangel(null, true);
+
+        $this->assertAttributeEquals(true, 'isTestMode', $archangel);
+    }
+
     public function testConstructSetsNullLogger()
     {
         $archangel = new Archangel();
@@ -337,6 +351,18 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals($expectedResponse, $response);
+    }
+
+    public function testSendInTestMode()
+    {
+        $archangel = new Archangel(null, true);
+        $archangel->addTo('test@example.com');
+        $archangel->setSubject('Test Subject');
+        $archangel->setPlainMessage('Plain text message');
+        $response = $archangel->send();
+
+        $this->assertTrue($response);
+
     }
 
     public function testSendFailure()
@@ -935,10 +961,7 @@ class ArchangelTest extends PHPUnit_Framework_TestCase
 
     public function testBuildAttachmentContentFailure()
     {
-        $logger = $this->getMockBuilder('Psr\Log\LoggerInterface')->getMock();
-
         $archangel = new Archangel();
-        $archangel->setLogger($logger);
         $buildMethod = $this->getProtectedMethod('buildAttachmentContent');
         $content = $buildMethod->invokeArgs($archangel, array('INVALID_PATH'));
 
