@@ -47,7 +47,6 @@ $archangel->send();
 
 ### Future Todos
  - add in more documentation
- - enable a test mode that sends to logger
 
 ## License
 
