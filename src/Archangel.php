@@ -16,6 +16,9 @@ use Psr\Log\NullLogger;
 class Archangel implements LoggerAwareInterface
 {
 
+    /** @var boolean $isTestMode */
+    protected $isTestMode;
+
     /** @var string $subject */
     protected $subject;
 
@@ -47,14 +50,16 @@ class Archangel implements LoggerAwareInterface
     const LINE_BREAK = "\r\n";
 
     /**
-     * @param string $mailer
+     * @param string  $mailer
+     * @param boolean $isTestMode
      */
-    public function __construct($mailer = null)
+    public function __construct($mailer = null, $isTestMode = false)
     {
         if (is_null($mailer)) {
             $mailer = sprintf('PHP/%s', phpversion());
         }
         $this->headers['X-Mailer'] = $mailer;
+        $this->isTestMode = $isTestMode;
 
         $this->logger = new NullLogger();
         $this->boundaryMixed = sprintf('PHP-mixed-%s', uniqid());
@@ -64,7 +69,7 @@ class Archangel implements LoggerAwareInterface
     /**
      * @param LoggerInterface $logger
      *
-     * @return $this;
+     * @return object instantiated $this
      */
     public function setLogger(LoggerInterface $logger)
     {
@@ -246,11 +251,12 @@ class Archangel implements LoggerAwareInterface
      * First checks to make sure the minimum fields are set (returns false if they are not)
      * Second it attempts to send the mail with php's mail() (returns false if it fails)
      *
-     * return boolean whether or not the email was valid & sent
+     * @return boolean whether or not the email was valid & sent
      */
     public function send()
     {
         if (!$this->checkRequiredFields()) {
+            $this->logger->error('Minimum required fields not filled out, cannot send Archangel mail.');
             return false;
         }
 
@@ -259,6 +265,18 @@ class Archangel implements LoggerAwareInterface
         $message = (empty($this->attachments)) ? $this->buildMessage() : $this->buildMessageWithAttachments();
         $headers = $this->buildHeaders();
 
+        $debugMessage = array(
+            'Triggered send on Archangel mail.',
+            "Recipients: {$recipients}",
+            "Subject: {$subject}",
+            "Message: {$message}",
+            "Headers: {$headers}",
+        );
+        $this->logger->debug(implode(' || ', $debugMessage));
+
+        if ($this->isTestMode) {
+            return true;
+        }
         return mail($recipients, $subject, $message, $headers);
     }
 
